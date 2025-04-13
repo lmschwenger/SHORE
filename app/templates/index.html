@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ app_name }} - Sentinel Image Explorer{% endblock %}
+
+{% block head_extra %}
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .content-container {
+        padding: 0;
+        height: calc(100vh - 56px - 56px); /* Subtract navbar and footer heights */
+    }
+    
+    #map-container {
+        height: 100%;
+        position: relative;
+    }
+    
+    #map {
+        height: 100%;
+        width: 100%;
+    }
+    
+    .sidebar {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 350px;
+        max-height: calc(100% - 20px);
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        overflow-y: auto;
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="map-container">
+    <div id="map"></div>
+
+    <div class="sidebar">
+        <h2>{{ app_name }}</h2>
+        <p>{{ app_description }}</p>
+
+        <div class="mb-4">
+            <h3>Area Selection</h3>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="geometryType" id="drawOption" value="draw" checked>
+                <label class="form-check-label" for="drawOption">
+                    Draw polygon on map
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="geometryType" id="importOption" value="import">
+                <label class="form-check-label" for="importOption">
+                    Import polygon
+                </label>
+            </div>
+
+            <div id="importOptions" style="display: none; margin-top: 10px;">
+                <div class="mb-3">
+                    <select class="form-select" id="fileFormat">
+                        <option value="geojson">GeoJSON</option>
+                        <option value="shp">Shapefile</option>
+                        <option value="gpkg">GeoPackage</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <input type="file" class="form-control" id="fileInput">
+                </div>
+                <div class="mb-3">
+                    <p class="text-center">- OR -</p>
+                    <textarea class="form-control" id="wktInput" placeholder="Paste WKT here" rows="3"></textarea>
+                </div>
+            </div>
+
+            <button id="searchButton" class="btn btn-primary mt-3 w-100">Search for Images</button>
+        </div>
+
+        <div id="results" style="display: none;">
+            <h3>Available Images</h3>
+            <div id="imagesList"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

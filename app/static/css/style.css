@@ -1,0 +1,100 @@
+/* General layout */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.content-container {
+    flex: 1;
+}
+
+.footer {
+    flex-shrink: 0;
+}
+
+/* Map styling */
+#map-container {
+    position: relative;
+    height: 100%;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+    z-index: 1;
+}
+
+/* Sidebar styling */
+.sidebar {
+    transition: all 0.3s ease;
+}
+
+.sidebar h2 {
+    color: #333;
+    border-bottom: 2px solid #3388ff;
+    padding-bottom: 8px;
+}
+
+.sidebar h3 {
+    font-size: 1.2rem;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #444;
+}
+
+/* Image items */
+.image-item {
+    transition: transform 0.2s;
+    background-color: #f9f9f9;
+}
+
+.image-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.image-item h4 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Button styling */
+.btn-primary {
+    background-color: #3388ff;
+    border-color: #3388ff;
+}
+
+.btn-primary:hover {
+    background-color: #2777ee;
+    border-color: #2777ee;
+}
+
+/* Loading indicator */
+.loading {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 5px;
+    padding: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        max-width: none;
+        top: auto;
+        right: auto;
+        bottom: 0;
+        max-height: 50vh;
+        border-radius: 15px 15px 0 0;
+    }
+}
