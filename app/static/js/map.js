@@ -63,21 +63,40 @@ const loadingIndicator = document.querySelector('.loading');
 const resultsContainer = document.getElementById('results');
 const imagesList = document.getElementById('imagesList');
 
+// Function to check if elements exist in the DOM
+function elementExists(element) {
+    return element !== null && element !== undefined;
+}
+
 // Show/hide appropriate options based on selected geometry type
 function toggleOptions() {
     const selectedType = document.querySelector('input[name="geometryType"]:checked').value;
+    const drawInstructions = document.getElementById('drawInstructions');
+    const importOptions = document.getElementById('importOptions');
 
     if (selectedType === 'draw') {
-        drawInstructions.style.display = 'block';
-        importOptions.style.display = 'none';
+        // Only modify style if element exists
+        if (elementExists(drawInstructions)) {
+            drawInstructions.style.display = 'block';
+        }
+
+        if (elementExists(importOptions)) {
+            importOptions.style.display = 'none';
+        }
 
         // Make sure draw control is enabled
         if (!map.drawControl) {
             map.addControl(drawControl);
         }
     } else if (selectedType === 'import') {
-        drawInstructions.style.display = 'none';
-        importOptions.style.display = 'block';
+        // Only modify style if element exists
+        if (elementExists(drawInstructions)) {
+            drawInstructions.style.display = 'none';
+        }
+
+        if (elementExists(importOptions)) {
+            importOptions.style.display = 'block';
+        }
 
         // Optionally, remove draw control when import is selected
         if (map.drawControl) {
@@ -94,10 +113,12 @@ geometryTypeRadios.forEach(function(radio) {
     radio.addEventListener('change', toggleOptions);
 });
 
-// Function to handle the search button click
+// app/static/js/map.js - Update the search button handler
+
+// Handle search button click
 searchButton.addEventListener('click', function() {
     const selectedType = document.querySelector('input[name="geometryType"]:checked').value;
-    let geometryData = {};
+    let geometry = null;
 
     if (selectedType === 'draw') {
         if (drawnItems.getLayers().length === 0) {
@@ -106,110 +127,91 @@ searchButton.addEventListener('click', function() {
         }
 
         const layer = drawnItems.getLayers()[0];
-        geometryData = {
-            type: 'draw',
-            geojson: layer.toGeoJSON().geometry
-        };
+        geometry = layer.toGeoJSON().geometry;
     } else if (selectedType === 'import') {
         const wktText = document.getElementById('wktInput').value.trim();
+        const fileInput = document.getElementById('fileInput');
 
+        if (!wktText && !fileInput.files.length) {
+            alert('Please select a file or paste WKT.');
+            return;
+        }
+
+        // If using WKT, send it for processing
         if (wktText) {
-            // Process WKT
-            geometryData = {
-                type: 'wkt',
-                wkt: wktText
-            };
+            // We'll handle this in the backend
+            // For now, just show loading state
         } else {
-            // Process file
-            const fileInput = document.getElementById('fileInput');
+            // Handle file processing via FormData
             const fileFormat = document.getElementById('fileFormat').value;
-
-            if (!fileInput.files.length) {
-                alert('Please select a file or paste WKT.');
-                return;
-            }
-
             const file = fileInput.files[0];
-            const reader = new FileReader();
 
-            loadingIndicator.style.display = 'block';
-
-            reader.onload = function(e) {
-                const fileContent = e.target.result;
-
-                // Send the file content to the server
-                fetch('/process_geometry', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        type: 'import',
-                        format: fileFormat,
-                        file: fileContent
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    loadingIndicator.style.display = 'none';
-                    displayResults(data);
-                    visualizeGeometry(data.geometry);
-                })
-                .catch(error => {
-                    loadingIndicator.style.display = 'none';
-                    console.error('Error:', error);
-                    alert('An error occurred while processing the file.');
-                });
-            };
-
-            reader.readAsText(file);
-            return; // Exit early as we're handling async file reading
+            // We'll use FormData to handle this case
         }
     }
 
-    // For direct WKT or drawn geometries
-    loadingIndicator.style.display = 'block';
+    // Show loading state
+    searchButton.disabled = true;
+    searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...';
 
-    fetch('/process_geometry', {
+    // Prepare search parameters
+    const searchParams = {
+        geometry: geometry,
+        max_cloud_coverage: 20  // Default cloud coverage threshold
+    };
+
+    // Call the API to search for images
+    fetch('/api/search_images', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(geometryData)
+        body: JSON.stringify(searchParams)
     })
     .then(response => response.json())
     .then(data => {
-        loadingIndicator.style.display = 'none';
-        displayResults(data);
+        // Reset button state
+        searchButton.disabled = false;
+        searchButton.textContent = 'Search for Images';
 
-        // If we're processing WKT, visualize the returned geometry
-        if (selectedType === 'wkt') {
-            visualizeGeometry(data.geometry);
+        // Handle authentication required response
+        if (data.error === "Not authenticated with OpenEO") {
+            if (confirm("You need to authenticate with Copernicus to access satellite imagery. Proceed to login?")) {
+                window.location.href = data.auth_url;
+            }
+            return;
         }
+
+        // Display results
+        displayResults(data.images);
     })
     .catch(error => {
-        loadingIndicator.style.display = 'none';
         console.error('Error:', error);
-        alert('An error occurred while processing the request.');
+
+        // Reset button state
+        searchButton.disabled = false;
+        searchButton.textContent = 'Search for Images';
+
+        alert('An error occurred while searching for images.');
     });
 });
 
-// Function to display the results in the sidebar
-function displayResults(data) {
+// Function to display results
+function displayResults(images) {
     // Clear previous results
     imagesList.innerHTML = '';
 
     // Check if we have any images
-    if (!data.sentinel_images || data.sentinel_images.length === 0) {
+    if (!images || images.length === 0) {
         imagesList.innerHTML = '<p>No images found for the selected area.</p>';
         resultsContainer.style.display = 'block';
         return;
     }
 
     // Display each image
-    data.sentinel_images.forEach(image => {
+    images.forEach(image => {
         const imageItem = document.createElement('div');
-        imageItem.className = 'image-item';
+        imageItem.className = 'card mb-3';
 
         // Format date
         const date = new Date(image.date);
@@ -217,13 +219,14 @@ function displayResults(data) {
 
         // Create image info
         imageItem.innerHTML = `
-            <h4>${image.id}</h4>
-            <div class="text-center">
-                <img src="${image.thumbnail || '/static/img/sample_preview_1.jpg'}" alt="Image preview" class="img-thumbnail">
+            <div class="card-body">
+                <h5 class="card-title">${image.id}</h5>
+                ${image.preview_url ? `<img src="${image.preview_url}" class="img-fluid mb-2" alt="Preview">` : ''}
+                <p class="card-text"><strong>Date:</strong> ${formattedDate}</p>
+                <p class="card-text"><strong>Cloud Coverage:</strong> ${image.cloudCoverage}%</p>
+                <p class="card-text"><strong>Bands:</strong> ${image.bands.join(', ')}</p>
+                <button class="btn btn-sm btn-outline-primary download-btn" data-image-id="${image.id}">Download</button>
             </div>
-            <p><strong>Date:</strong> ${formattedDate}</p>
-            <p><strong>Cloud Coverage:</strong> ${image.cloudCoverage}%</p>
-            <button class="btn btn-sm btn-outline-primary view-details-btn" data-image-id="${image.id}">View Details</button>
         `;
 
         imagesList.appendChild(imageItem);
@@ -232,11 +235,12 @@ function displayResults(data) {
     // Show the results container
     resultsContainer.style.display = 'block';
 
-    // Add event listeners to the view details buttons
-    document.querySelectorAll('.view-details-btn').forEach(button => {
+    // Add event listeners to download buttons
+    document.querySelectorAll('.download-btn').forEach(button => {
         button.addEventListener('click', function() {
             const imageId = this.getAttribute('data-image-id');
-            alert(`Details for image ${imageId} would be shown here.`);
+            alert(`Download functionality for image ${imageId} would be implemented here.`);
+            // In a full implementation, you would call another API endpoint to download the image
         });
     });
 }
