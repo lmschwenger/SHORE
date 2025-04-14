@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="WIP STAC API">
-      <change afterPath="$PROJECT_DIR$/app/services/water_level_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/stac_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/stac_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/static/js/map.js" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/js/map.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/main.py" afterDir="false" />
-    </list>
+    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="Implemented water level" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -193,13 +186,22 @@
       <option name="project" value="LOCAL" />
       <updated>1744626214048</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Implemented water level">
+      <option name="closed" value="true" />
+      <created>1744633463845</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1744633463845</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="First commit" />
     <MESSAGE value="WIP OpenEO Auth" />
     <MESSAGE value="WIP STAC API" />
-    <option name="LAST_COMMIT_MESSAGE" value="WIP STAC API" />
+    <MESSAGE value="Implemented water level" />
+    <option name="LAST_COMMIT_MESSAGE" value="Implemented water level" />
   </component>
 </project>
