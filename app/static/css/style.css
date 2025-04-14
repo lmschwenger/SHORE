@@ -3,6 +3,7 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
@@ -13,6 +14,7 @@ body {
 
 .content-container {
     flex: 1;
+    padding: 0;
 }
 
 .footer {
@@ -34,38 +36,110 @@ body {
 /* Sidebar styling */
 .sidebar {
     transition: all 0.3s ease;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    border-radius: 8px;
 }
 
 .sidebar h2 {
-    color: #333;
+    color: #2c3e50;
     border-bottom: 2px solid #3388ff;
     padding-bottom: 8px;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
 }
 
 .sidebar h3 {
     font-size: 1.2rem;
     margin-top: 0;
     margin-bottom: 15px;
-    color: #444;
+    color: #34495e;
+}
+
+.sidebar p {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+/* Accordion styling */
+.accordion-button:not(.collapsed) {
+    background-color: rgba(51, 136, 255, 0.1);
+    color: #3388ff;
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.15rem rgba(51, 136, 255, 0.25);
+}
+
+/* Form controls */
+.form-control:focus, .form-select:focus {
+    border-color: #3388ff;
+    box-shadow: 0 0 0 0.15rem rgba(51, 136, 255, 0.25);
+}
+
+.form-range::-webkit-slider-thumb {
+    background: #3388ff;
+}
+
+.form-range::-moz-range-thumb {
+    background: #3388ff;
+}
+
+.form-range::-ms-thumb {
+    background: #3388ff;
 }
 
 /* Image items */
 .image-item {
-    transition: transform 0.2s;
-    background-color: #f9f9f9;
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .image-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-.image-item h4 {
-    font-size: 1rem;
-    margin-bottom: 10px;
+.image-item .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 15px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.image-preview {
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+.image-preview img {
+    transition: transform 0.5s ease;
+    width: 100%;
+    object-fit: cover;
+}
+
+.image-preview img:hover {
+    transform: scale(1.05);
+}
+
+.image-metadata {
+    font-size: 0.85rem;
+}
+
+.image-metadata .table {
+    margin-bottom: 0;
+}
+
+.image-metadata th {
+    width: 40%;
+    color: #7f8c8d;
 }
 
 /* Button styling */
@@ -74,16 +148,76 @@ body {
     border-color: #3388ff;
 }
 
-.btn-primary:hover {
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
     background-color: #2777ee;
     border-color: #2777ee;
 }
 
+.btn-outline-primary {
+    color: #3388ff;
+    border-color: #3388ff;
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
+    background-color: #3388ff;
+    border-color: #3388ff;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover, .btn-success:focus, .btn-success:active {
+    background-color: #218838;
+    border-color: #218838;
+}
+
+.btn-outline-success {
+    color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-outline-success:hover, .btn-outline-success:focus, .btn-outline-success:active {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
 /* Loading indicator */
 .loading {
-    background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
     padding: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal styling */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Leaflet controls styling */
+.leaflet-touch .leaflet-bar a {
+    color: #3388ff;
+}
+
+.leaflet-touch .leaflet-bar a:hover {
+    background-color: #3388ff;
+    color: white;
+}
+
+.leaflet-draw-toolbar a {
+    background-color: white;
+}
+
+.leaflet-draw-toolbar a:hover {
+    background-color: #f2f2f2;
 }
 
 /* Responsive adjustments */
@@ -94,7 +228,33 @@ body {
         top: auto;
         right: auto;
         bottom: 0;
-        max-height: 50vh;
+        max-height: 60vh;
         border-radius: 15px 15px 0 0;
+        padding: 15px;
     }
+
+    .sidebar h2 {
+        font-size: 1.3rem;
+    }
+
+    .image-item {
+        margin-bottom: 10px;
+    }
+}
+
+/* Animation for loading state */
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
+}
+
+.loading-pulse {
+    animation: pulse 1.5s infinite ease-in-out;
 }
