@@ -1,6 +1,6 @@
 Flask
 Werkzeug
-shapely==2.0.1 --no-binary=:all: --only-binary=shapely
+shapely
 requests==2.32.0
 python-dotenv==1.0.0
 numpy
