@@ -1,0 +1,95 @@
+<!-- app/templates/authenticate.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ app_name }} - Authentication Required{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Authentication Required</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Please authenticate with Copernicus Data Space Ecosystem</h5>
+                    <p class="card-text">
+                        To access satellite imagery, you need to authenticate with the Copernicus Data Space Ecosystem.
+                        Please follow these steps:
+                    </p>
+
+                    <ol class="mb-4">
+                        <li>Click the "Go to Authentication Page" button below</li>
+                        <li>Log in with your Copernicus account (or create one if you don't have it)</li>
+                        <li>Authorize the application to access your account</li>
+                        <li>After authorizing, you'll be redirected automatically</li>
+                    </ol>
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ auth_url }}" target="_blank" class="btn btn-lg btn-primary mb-3">Go to Authentication Page</a>
+                        <button id="checkAuthButton" class="btn btn-lg btn-success" onclick="checkAuth()">I've Completed Authentication</button>
+                    </div>
+
+                    <div id="authProgress" class="progress mt-4" style="display: none;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <strong>Note:</strong> This is a one-time process. Once authenticated, you'll be able to access satellite imagery without logging in again for the duration of your session.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function checkAuth() {
+        // Show progress bar
+        document.getElementById('authProgress').style.display = 'block';
+        document.getElementById('checkAuthButton').disabled = true;
+        document.getElementById('checkAuthButton').innerHTML = 'Checking authentication status...';
+
+        // Redirect to check auth status
+        window.location.href = "{{ return_url }}";
+    }
+
+    // Set up polling if the auth window is opened automatically
+    let authWindow = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Don't auto-open on mobile
+        if (window.innerWidth > 768) {
+            // Auto-open auth window
+            authWindow = window.open("{{ auth_url }}", "_blank");
+
+            // Start polling if we've opened the window
+            if (authWindow) {
+                pollAuthStatus();
+            }
+        }
+    });
+
+    function pollAuthStatus() {
+        // Check authentication status every 5 seconds
+        setTimeout(() => {
+            fetch("{{ return_url }}")
+                .then(response => {
+                    // If we're redirected to the original page, authentication is complete
+                    if (response.url && !response.url.includes('/auth/')) {
+                        window.location.href = response.url;
+                    } else {
+                        // Continue polling
+                        pollAuthStatus();
+                    }
+                })
+                .catch(() => {
+                    // If there's an error, continue polling
+                    pollAuthStatus();
+                });
+        }, 5000);
+    }
+</script>
+{% endblock %}

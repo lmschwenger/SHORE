@@ -13,7 +13,7 @@ class Config:
     TESTING = False
     APP_NAME = "SHORE"
     APP_DESCRIPTION = "Sentinel Hydrological Observation & Resource Explorer"
-
+    OPENEO_PROVIDER_URL = 'https://openeo.dataspace.copernicus.eu/'
 
 class DevelopmentConfig(Config):
     """Development configuration"""
