@@ -73,6 +73,23 @@ const cloudCoverageSlider = document.getElementById('cloudCoverage');
 const cloudCoverageValue = document.getElementById('cloudCoverageValue');
 const previewImage = document.getElementById('previewImage');
 const showStationsCheckbox = document.getElementById('showStations');
+const resultsPerPageSelect = document.getElementById('resultsPerPage');
+const paginationContainer = document.getElementById('paginationContainer');
+
+// Store search state globally
+let searchState = {
+    currentPage: 1,
+    resultsPerPage: 20,
+    totalResults: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+    geometry: null,
+    startDate: null,
+    endDate: null,
+    maxCloudCoverage: 20,
+    sortBy: 'datetime',
+    sortDirection: 'desc'
+};
 
 // Store search results globally
 let searchResults = [];
@@ -84,7 +101,13 @@ function elementExists(element) {
 }
 
 // Show/hide appropriate options based on selected geometry type
-function toggleOptions() {
+function toggleOptions(option
+) {
+    if (!option || !option.value) {
+        console.warn("Invalid option provided to toggleOptions");
+        return; // Early return to prevent errors
+    }
+
     const selectedType = document.querySelector('input[name="geometryType"]:checked').value;
 
     if (elementExists(drawInstructions)) {
@@ -128,6 +151,29 @@ if (elementExists(cloudCoverageSlider) && elementExists(cloudCoverageValue)) {
         cloudCoverageValue.textContent = this.value;
     });
 }
+
+// Initialize results per page dropdown if it exists
+if (elementExists(resultsPerPageSelect)) {
+    resultsPerPageSelect.addEventListener('change', function() {
+        searchState.resultsPerPage = parseInt(this.value);
+        if (searchResults.length > 0) {
+            // If we already have results, re-search with new page size
+            searchState.currentPage = 1; // Reset to first page when changing page size
+            performSearch();
+        }
+    });
+}
+
+// Event listener for sorting change
+document.addEventListener('DOMContentLoaded', function() {
+    const sortDirectionSelect = document.getElementById('sortDirection');
+    if (sortDirectionSelect) {
+        sortDirectionSelect.addEventListener('change', function() {
+            searchState.sortDirection = this.value;
+            performSearch(1); // Reset to first page when changing sort
+        });
+    }
+});
 
 // Load water level stations if checkbox exists
 if (elementExists(showStationsCheckbox)) {
@@ -230,6 +276,106 @@ function displayStations(stations) {
     }
 }
 
+// Main search function that can be called with pagination parameters
+function performSearch(page = 1) {
+    // Show loading state
+    searchButton.disabled = true;
+    searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...';
+
+    // Show loading indicator
+    if (elementExists(loadingIndicator)) {
+        loadingIndicator.style.display = 'block';
+    }
+
+    // Hide results button (will show again when results are ready)
+    if (elementExists(resultsButton)) {
+        resultsButton.style.display = 'none';
+    }
+
+    // Update current page in search state
+    searchState.currentPage = page;
+
+    // Prepare search parameters
+    const searchParams = {
+        geometry: searchState.geometry,
+        start_date: searchState.startDate,
+        end_date: searchState.endDate,
+        max_cloud_coverage: searchState.maxCloudCoverage,
+        page: searchState.currentPage,
+        limit: searchState.resultsPerPage,
+        sort_by: searchState.sortBy,
+        sort_direction: searchState.sortDirection
+    };
+
+    // Call the API to search for images
+    fetch('/api/search_images', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(searchParams)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Reset button state
+        searchButton.disabled = false;
+        searchButton.textContent = 'Search for Images';
+
+        // Hide loading indicator
+        if (elementExists(loadingIndicator)) {
+            loadingIndicator.style.display = 'none';
+        }
+
+        // Store the results globally
+        searchResults = data.images || [];
+
+        // Update pagination state
+        if (data.pagination) {
+            searchState.totalResults = data.pagination.total;
+            searchState.hasNextPage = data.pagination.next;
+            searchState.hasPrevPage = data.pagination.prev;
+
+            // Update the pagination UI
+            updatePagination(data.pagination);
+        }
+
+        // Display results count and show results button
+        updateResultsButton(searchResults.length, searchState.totalResults);
+
+        // Clear and populate results table
+        populateResultsTable(searchResults);
+
+        // If we're in the results modal, update the modal content directly
+        const resultsModal = document.getElementById('resultsModal');
+        if (resultsModal && resultsModal.classList.contains('show')) {
+            // The modal is open, update the counts
+            const resultsModalCount = document.getElementById('resultsModalCount');
+            if (resultsModalCount) {
+                resultsModalCount.textContent = `${searchState.totalResults} images (showing ${searchState.currentPage * searchState.resultsPerPage - searchState.resultsPerPage + 1}-${Math.min(searchState.currentPage * searchState.resultsPerPage, searchState.totalResults)})`;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+
+        // Reset button state
+        searchButton.disabled = false;
+        searchButton.textContent = 'Search for Images';
+
+        // Hide loading indicator
+        if (elementExists(loadingIndicator)) {
+            loadingIndicator.style.display = 'none';
+        }
+
+        alert(`An error occurred while searching for images: ${error.message}`);
+    });
+}
+
 // Handle search button click
 searchButton.addEventListener('click', function() {
     const selectedType = document.querySelector('input[name="geometryType"]:checked').value;
@@ -264,13 +410,6 @@ searchButton.addEventListener('click', function() {
         }
     }
 
-    // Show loading state
-    searchButton.disabled = true;
-    searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...';
-
-    // Hide results button (will show again when results are ready)
-    resultsButton.style.display = 'none';
-
     // Get date range and cloud coverage
     let startDate = null;
     let endDate = null;
@@ -285,69 +424,61 @@ searchButton.addEventListener('click', function() {
         maxCloudCoverage = parseInt(cloudCoverageSlider.value);
     }
 
-    // Prepare search parameters
-    const searchParams = {
-        geometry: geometry,
-        start_date: startDate,
-        end_date: endDate,
-        max_cloud_coverage: maxCloudCoverage
-    };
+    // Get results per page if the element exists
+    if (elementExists(resultsPerPageSelect)) {
+        searchState.resultsPerPage = parseInt(resultsPerPageSelect.value);
+    }
 
-    // Call the API to search for images
-    fetch('/api/search_images', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(searchParams)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Reset button state
-        searchButton.disabled = false;
-        searchButton.textContent = 'Search for Images';
+    // Update search state
+    searchState.geometry = geometry;
+    searchState.startDate = startDate;
+    searchState.endDate = endDate;
+    searchState.maxCloudCoverage = maxCloudCoverage;
+    searchState.currentPage = 1; // Reset to page 1 for a new search
 
-        // Store the results globally
-        searchResults = data.images || [];
-
-        // Display results count and show results button
-        updateResultsButton(searchResults.length);
-
-        // Clear and populate results table
-        populateResultsTable(searchResults);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-
-        // Reset button state
-        searchButton.disabled = false;
-        searchButton.textContent = 'Search for Images';
-
-        alert(`An error occurred while searching for images: ${error.message}`);
-    });
+    // Perform the search
+    performSearch(1);
 });
 
 // Function to update the results button
-function updateResultsButton(count) {
+function updateResultsButton(count, totalCount = null) {
     if (count > 0) {
-        resultsCount.textContent = count;
+        // Display the count differently based on whether we have pagination
+        if (totalCount && totalCount > count) {
+            // For paginated results, show total and current page info
+            const start = (searchState.currentPage - 1) * searchState.resultsPerPage + 1;
+            const end = Math.min(searchState.currentPage * searchState.resultsPerPage, totalCount);
+            resultsCount.textContent = `${totalCount} (showing ${start}-${end})`;
+        } else {
+            // Without pagination or on a single page
+            resultsCount.textContent = count;
+        }
+
         resultsButton.style.display = 'block';
 
         // Also update the count in the modal header
         const modalCount = document.getElementById('resultsModalCount');
         if (modalCount) {
-            modalCount.textContent = count + ' images';
+            if (totalCount && totalCount > count) {
+                const start = (searchState.currentPage - 1) * searchState.resultsPerPage + 1;
+                const end = Math.min(searchState.currentPage * searchState.resultsPerPage, totalCount);
+                modalCount.textContent = `${totalCount} images (showing ${start}-${end})`;
+            } else {
+                modalCount.textContent = count + ' images';
+            }
         }
 
         // Add export functionality
         const exportBtn = document.getElementById('exportResultsBtn');
         if (exportBtn) {
-            exportBtn.addEventListener('click', exportResults);
+            // Remove previous event listeners to avoid duplicates
+            exportBtn.replaceWith(exportBtn.cloneNode(true));
+
+            // Get the new element reference after cloning
+            const newExportBtn = document.getElementById('exportResultsBtn');
+            if (newExportBtn) {
+                newExportBtn.addEventListener('click', exportResults);
+            }
         }
     } else {
         resultsButton.style.display = 'none';
@@ -356,13 +487,240 @@ function updateResultsButton(count) {
     }
 }
 
-// Function to export results as CSV
+// Function to create and update pagination controls
+function updatePagination(paginationData) {
+    if (!elementExists(paginationContainer)) {
+        return;
+    }
+
+    // Clear existing pagination
+    paginationContainer.innerHTML = '';
+
+    // Calculate total pages
+    const totalPages = Math.ceil(paginationData.total / paginationData.limit);
+
+    // Don't show pagination if only one page
+    if (totalPages <= 1) {
+        return;
+    }
+
+    // Create the pagination element
+    const paginationNav = document.createElement('nav');
+    paginationNav.setAttribute('aria-label', 'Search results pagination');
+
+    const paginationUl = document.createElement('ul');
+    paginationUl.className = 'pagination justify-content-center';
+
+    // Previous button
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${!paginationData.prev ? 'disabled' : ''}`;
+
+    const prevLink = document.createElement('a');
+    prevLink.className = 'page-link';
+    prevLink.href = '#';
+    prevLink.innerHTML = '&laquo;';
+    prevLink.setAttribute('aria-label', 'Previous');
+
+    if (paginationData.prev) {
+        prevLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            performSearch(paginationData.page - 1);
+        });
+    }
+
+    prevLi.appendChild(prevLink);
+    paginationUl.appendChild(prevLi);
+
+    // Page numbers - we'll show up to 5 page numbers
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, paginationData.page - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // Add ellipsis at the beginning if needed
+    if (startPage > 1) {
+        const ellipsisStart = document.createElement('li');
+        ellipsisStart.className = 'page-item disabled';
+        const ellipsisStartLink = document.createElement('a');
+        ellipsisStartLink.className = 'page-link';
+        ellipsisStartLink.href = '#';
+        ellipsisStartLink.textContent = '...';
+        ellipsisStart.appendChild(ellipsisStartLink);
+        paginationUl.appendChild(ellipsisStart);
+    }
+
+    // Add page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        const pageLi = document.createElement('li');
+        pageLi.className = `page-item ${i === paginationData.page ? 'active' : ''}`;
+
+        const pageLink = document.createElement('a');
+        pageLink.className = 'page-link';
+        pageLink.href = '#';
+        pageLink.textContent = i;
+
+        if (i !== paginationData.page) {
+            pageLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                performSearch(i);
+            });
+        }
+
+        pageLi.appendChild(pageLink);
+        paginationUl.appendChild(pageLi);
+    }
+
+    // Add ellipsis at the end if needed
+    if (endPage < totalPages) {
+        const ellipsisEnd = document.createElement('li');
+        ellipsisEnd.className = 'page-item disabled';
+        const ellipsisEndLink = document.createElement('a');
+        ellipsisEndLink.className = 'page-link';
+        ellipsisEndLink.href = '#';
+        ellipsisEndLink.textContent = '...';
+        ellipsisEnd.appendChild(ellipsisEndLink);
+        paginationUl.appendChild(ellipsisEnd);
+    }
+
+    // Next button
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${!paginationData.next ? 'disabled' : ''}`;
+
+    const nextLink = document.createElement('a');
+    nextLink.className = 'page-link';
+    nextLink.href = '#';
+    nextLink.innerHTML = '&raquo;';
+    nextLink.setAttribute('aria-label', 'Next');
+
+    if (paginationData.next) {
+        nextLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            performSearch(paginationData.page + 1);
+        });
+    }
+
+    nextLi.appendChild(nextLink);
+    paginationUl.appendChild(nextLi);
+
+    // Add to the container
+    paginationNav.appendChild(paginationUl);
+    paginationContainer.appendChild(paginationNav);
+}
+
+// Export results as CSV - now supports pagination
 function exportResults() {
     if (!searchResults || searchResults.length === 0) {
         alert('No results to export');
         return;
     }
 
+    // Show loading indicator
+    if (elementExists(loadingIndicator)) {
+        loadingIndicator.style.display = 'block';
+    }
+
+    // If we have pagination and there are more results than what's currently loaded,
+    // we'll need to fetch all results for the export
+    if (searchState.totalResults > searchResults.length) {
+        const confirmed = confirm(`You are about to export all ${searchState.totalResults} results, which may take some time. Continue?`);
+        if (!confirmed) {
+            if (elementExists(loadingIndicator)) {
+                loadingIndicator.style.display = 'none';
+            }
+            return;
+        }
+
+        // We'll need to fetch all pages
+        fetchAllPagesForExport();
+        return;
+    }
+
+    // If we're here, we can just export the current results
+    exportToCSV(searchResults);
+
+    // Hide loading indicator
+    if (elementExists(loadingIndicator)) {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
+// Function to fetch all pages for export
+function fetchAllPagesForExport() {
+    // Create a copy of the search state with a large limit to minimize requests
+    const exportSearchParams = {
+        geometry: searchState.geometry,
+        start_date: searchState.startDate,
+        end_date: searchState.endDate,
+        max_cloud_coverage: searchState.maxCloudCoverage,
+        page: 1,
+        limit: 1000, // Maximum allowed by the API
+        sort_by: searchState.sortBy,
+        sort_direction: searchState.sortDirection
+    };
+
+    let allResults = [];
+    let currentPage = 1;
+    let hasNextPage = true;
+
+    // Define the recursive function to fetch pages
+    function fetchNextPage() {
+        exportSearchParams.page = currentPage;
+
+        fetch('/api/search_images', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(exportSearchParams)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Add the images from this page to our collection
+            allResults = allResults.concat(data.images || []);
+
+            // Check if there are more pages
+            hasNextPage = data.pagination && data.pagination.next;
+
+            if (hasNextPage) {
+                // If there are more pages, fetch the next one
+                currentPage++;
+                fetchNextPage();
+            } else {
+                // If no more pages, export the results
+                exportToCSV(allResults);
+
+                // Hide loading indicator
+                if (elementExists(loadingIndicator)) {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching all pages:', error);
+            alert(`Error fetching all results for export: ${error.message}`);
+
+            // Hide loading indicator
+            if (elementExists(loadingIndicator)) {
+                loadingIndicator.style.display = 'none';
+            }
+        });
+    }
+
+    // Start fetching pages
+    fetchNextPage();
+}
+
+// Function to export results to CSV
+function exportToCSV(results) {
     // Create CSV content
     let csvContent = 'data:text/csv;charset=utf-8,';
 
@@ -370,7 +728,7 @@ function exportResults() {
     csvContent += 'ID,Date,Cloud Coverage,Sun Elevation,Sun Azimuth,Water Level,Station ID,Station Name,Preview URL\n';
 
     // Add data rows
-    searchResults.forEach(image => {
+    results.forEach(image => {
         // Extract water level data if available
         const waterLevel = image.waterLevel ? image.waterLevel.value : '';
         const stationId = image.waterLevel ? image.waterLevel.stationId : '';
@@ -422,9 +780,6 @@ function populateResultsTable(images) {
     if (!images || images.length === 0) {
         return;
     }
-
-    // Sort images by date (newest first)
-    images.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     // Add each image to the table
     images.forEach((image, index) => {
@@ -791,7 +1146,6 @@ function viewImageDetails(imageId) {
                                                     <div class="card-body">
                                                         <p class="small">
                                                             <strong>Parameter ID:</strong> ${waterLevel.parameterId || 'N/A'}<br>
-                                                            <strong>DVR<strong>Parameter ID:</strong> ${waterLevel.parameterId || 'N/A'}<br>
                                                             <strong>DVR90:</strong> Danish Vertical Reference 1990, which is a height reference system used in Denmark.
                                                         </p>
                                                         <hr>

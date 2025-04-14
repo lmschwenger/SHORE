@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Water Level Data{% endblock %}
+
+{% block head_extra %}
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .content-container {
+        padding: 0;
+        height: calc(100vh - 56px - 56px); /* Subtract navbar and footer heights */
+    }
+
+    #map-container {
+        height: 100%;
+        position: relative;
+    }
+
+    #map {
+        height: 100%;
+        width: 100%;
+    }
+
+    .time-control-panel {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+        width: 80%;
+        max-width: 500px;
+    }
+
+    .station-marker .leaflet-popup-content {
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .water-level-label {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #666;
+        border-radius: 4px;
+        padding: 2px 5px;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="map-container">
+    <div id="map"></div>
+
+    <div class="time-control-panel">
+        <h5 class="mb-3">Water Level Time Control</h5>
+        <div class="mb-3">
+            <label for="datetimePicker" class="form-label">Select Date and Time:</label>
+            <input type="datetime-local" class="form-control" id="datetimePicker">
+        </div>
+        <div class="mb-2">
+            <button id="updateButton" class="btn btn-primary w-100">Update Water Levels</button>
+        </div>
+        <div id="statusMessage" class="mt-2 text-center"></div>
+    </div>
+</div>
+
+<div class="loading">
+    <div class="d-flex align-items-center">
+        <strong>Loading...</strong>
+        <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script src="{{ url_for('static', filename='js/water_level.js') }}"></script>
+{% endblock %}

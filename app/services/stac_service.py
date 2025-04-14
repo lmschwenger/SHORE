@@ -18,18 +18,23 @@ class STACService:
         """Set the water level service for fetching water level data"""
         self.water_level_service = water_level_service
 
-    def search_images(self, geometry, start_date=None, end_date=None, max_cloud_coverage=20):
+    def search_images(self, geometry, start_date=None, end_date=None, max_cloud_coverage=20,
+                      page=1, limit=20, sort_by=None, sort_direction='desc'):
         """
-        Search for Sentinel-2 images based on geographic area and time range
+        Search for Sentinel-2 images based on geographic area and time range with pagination
 
         Parameters:
         - geometry: GeoJSON geometry object defining the area of interest
         - start_date: Start date for the search (defaults to 15 days ago)
         - end_date: End date for the search (defaults to today)
         - max_cloud_coverage: Maximum cloud coverage percentage
+        - page: Page number to retrieve (starts at 1)
+        - limit: Number of results per page (max 1000 per STAC API docs)
+        - sort_by: Field to sort by (e.g. 'datetime')
+        - sort_direction: Sort direction ('asc' or 'desc')
 
         Returns:
-        - List of image metadata objects
+        - Dictionary with results and pagination metadata
         """
         try:
             # Set default dates if not provided
@@ -50,19 +55,38 @@ class STACService:
             geom_shape = shape(geometry)
             bbox = geom_shape.bounds  # (minx, miny, maxx, maxy)
 
+            # Ensure page number is valid
+            if page < 1:
+                page = 1
+
+            # Ensure limit is within bounds (API docs indicate max is 1000)
+            if limit < 1:
+                limit = 20
+            elif limit > 1000:
+                limit = 1000
+
             # Try first with simple GET request (more reliable)
             try:
-                return self.search_with_get(geometry, start_date, end_date, max_cloud_coverage)
+                return self.search_with_get(
+                    geometry,
+                    start_date,
+                    end_date,
+                    max_cloud_coverage,
+                    page,
+                    limit,
+                    sort_by,
+                    sort_direction
+                )
             except Exception as e:
                 self.logger.warning(f"GET request failed, trying POST: {str(e)}")
 
-            # Build CQL2 filter for more precise filtering
-            # Simplify the request to avoid potential issues with CQL2 syntax
+            # Build filter object for POST request
             filter_obj = {
                 "collections": ["SENTINEL-2"],
                 "bbox": list(bbox),
                 "datetime": datetime_query,
-                "limit": 50
+                "limit": limit,
+                "page": page
             }
 
             # Add cloud coverage filter if specified
@@ -73,6 +97,11 @@ class STACService:
                     }
                 }
 
+            # Add sorting if specified
+            if sort_by:
+                sort_prefix = '-' if sort_direction.lower() == 'desc' else ''
+                filter_obj["sortby"] = [f"{sort_prefix}{sort_by}"]
+
             # Make the request using POST
             self.logger.info(f"Searching STAC API with filter: {filter_obj}")
             response = requests.post(f"{self.stac_base_url}/search", json=filter_obj)
@@ -81,12 +110,37 @@ class STACService:
             # Parse the response
             stac_response = response.json()
 
-            # Process and return the results
-            return self._process_stac_response(stac_response)
+            # Extract pagination links if available
+            next_link = None
+            prev_link = None
+
+            for link in stac_response.get("links", []):
+                if link.get("rel") == "next":
+                    next_link = link.get("href")
+                elif link.get("rel") == "prev":
+                    prev_link = link.get("href")
+
+            # Process images
+            images = self._process_stac_response(stac_response)
+
+            # Return results with pagination info
+            return {
+                "images": images,
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": stac_response.get("context", {}).get("matched") or len(images),
+                    "next": next_link is not None,
+                    "prev": prev_link is not None,
+                    "next_link": next_link,
+                    "prev_link": prev_link
+                }
+            }
 
         except Exception as e:
             self.logger.error(f"Error searching for images: {str(e)}")
-            return []
+            return {"images": [],
+                    "pagination": {"page": page, "limit": limit, "total": 0, "next": False, "prev": False}}
 
     def get_image_details(self, image_id):
         """
@@ -162,10 +216,13 @@ class STACService:
             self.logger.error(f"Error getting download links: {str(e)}")
             return {}
 
-    def search_with_get(self, geometry, start_date=None, end_date=None, max_cloud_coverage=20):
+    def search_with_get(self, geometry, start_date=None, end_date=None, max_cloud_coverage=20,
+                        page=1, limit=20, sort_by=None, sort_direction='desc'):
         """
         Alternative search method using GET request instead of POST
         This is often more reliable as the STAC API implementation may have issues with CQL2
+
+        Added pagination support and sorting
         """
         try:
             # Set default dates if not provided
@@ -189,11 +246,18 @@ class STACService:
 
             # Build URL for searching Sentinel-2 L2A images
             url = f"{self.stac_base_url}/collections/SENTINEL-2/items"
+
             params = {
                 "datetime": datetime_query,
                 "bbox": bbox_str,
-                "limit": 50  # Get more results
+                "limit": limit,
+                "page": page
             }
+
+            # Add sorting if specified
+            if sort_by:
+                sort_prefix = '-' if sort_direction.lower() == 'desc' else ''
+                params["sortby"] = f"{sort_prefix}{sort_by}"
 
             # Make the request
             self.logger.info(f"Searching STAC API with params: {params}")
@@ -203,13 +267,37 @@ class STACService:
             # Parse the response
             stac_response = response.json()
 
-            # Filter by cloud coverage after retrieving results
-            # (since we can't do this in the GET request)
+            # Extract pagination links
+            next_link = None
+            prev_link = None
+
+            for link in stac_response.get("links", []):
+                if link.get("rel") == "next":
+                    next_link = link.get("href")
+                elif link.get("rel") == "prev":
+                    prev_link = link.get("href")
+
+            # Process results
             result = self._process_stac_response(stac_response)
+
+            # Filter by cloud coverage after retrieving results
+            # (since we may not be able to filter by this in the GET request)
             if max_cloud_coverage < 100:
                 result = [img for img in result if img.get('cloudCoverage', 100) <= max_cloud_coverage]
 
-            return result
+            # Return results with pagination info
+            return {
+                "images": result,
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": stac_response.get("context", {}).get("matched") or len(result),
+                    "next": next_link is not None,
+                    "prev": prev_link is not None,
+                    "next_link": next_link,
+                    "prev_link": prev_link
+                }
+            }
 
         except Exception as e:
             self.logger.error(f"Error searching for images with GET: {str(e)}")

@@ -4,10 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="prepare for deployment">
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/static/logo.svg" afterDir="false" />
+    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="Added logo and readme">
+      <change afterPath="$PROJECT_DIR$/app/static/js/water_level.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/templates/waterlevel.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/stac_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/stac_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/water_level_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/water_level_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/static/js/map.js" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/js/map.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,8 +23,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="HTML File" />
         <option value="Python Script" />
+        <option value="HTML File" />
       </list>
     </option>
   </component>
@@ -42,6 +48,9 @@
     &quot;accountId&quot;: &quot;23475941-77cc-4f46-bf74-a09505df4e7c&quot;
   }
 }</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/app/static/js/map.js" root0="FORCE_HIGHLIGHTING" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
 }</component>
@@ -56,9 +65,12 @@
     "DefaultHtmlFileTemplate": "HTML File",
     "Python.__init__.executor": "Run",
     "Python.main.executor": "Run",
-    "Python.run.executor": "Debug",
+    "Python.run.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master"
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "feature/implement-pagination",
+    "last_opened_file_path": "C:/Users/lasse/Downloads/ml-llm-251.23774.42.24.zip",
+    "settings.editor.selected.configurable": "preferences.updates"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -145,7 +157,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-975db3bf15a3-31b6be0877a2-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.18034.82" />
+        <option value="bundled-python-sdk-4f4e415b4190-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.26053.29" />
       </set>
     </attachedChunks>
   </component>
@@ -238,7 +250,15 @@
       <option name="project" value="LOCAL" />
       <updated>1744635057616</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Added logo and readme">
+      <option name="closed" value="true" />
+      <created>1744651093664</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1744651093664</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -247,14 +267,15 @@
     <MESSAGE value="WIP STAC API" />
     <MESSAGE value="Implemented water level" />
     <MESSAGE value="prepare for deployment" />
-    <option name="LAST_COMMIT_MESSAGE" value="prepare for deployment" />
+    <MESSAGE value="Added logo and readme" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added logo and readme" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/app/views/main.py</url>
-          <line>56</line>
+          <line>66</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
       </breakpoints>
