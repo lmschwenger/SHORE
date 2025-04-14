@@ -5,8 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="prepare for deployment">
+      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/static/logo.svg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,7 +56,7 @@
     "DefaultHtmlFileTemplate": "HTML File",
     "Python.__init__.executor": "Run",
     "Python.main.executor": "Run",
-    "Python.run.executor": "Run",
+    "Python.run.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master"
   }
@@ -213,7 +214,31 @@
       <option name="project" value="LOCAL" />
       <updated>1744634805599</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="prepare for deployment">
+      <option name="closed" value="true" />
+      <created>1744634915689</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1744634915689</updated>
+    </task>
+    <task id="LOCAL-00009" summary="prepare for deployment">
+      <option name="closed" value="true" />
+      <created>1744635006230</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1744635006230</updated>
+    </task>
+    <task id="LOCAL-00010" summary="prepare for deployment">
+      <option name="closed" value="true" />
+      <created>1744635057616</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1744635057616</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -223,5 +248,16 @@
     <MESSAGE value="Implemented water level" />
     <MESSAGE value="prepare for deployment" />
     <option name="LAST_COMMIT_MESSAGE" value="prepare for deployment" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/app/views/main.py</url>
+          <line>56</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
