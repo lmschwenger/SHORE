@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}{{ app_name }} - Water Level Overview{% endblock %}
+
+{% block head_extra %}
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .content-container {
+        padding: 0;
+        height: calc(100vh - 56px - 56px); /* Subtract navbar and footer heights */
+    }
+
+    #map-container {
+        height: 100%;
+        position: relative;
+    }
+
+    #map {
+        height: 100%;
+        width: 100%;
+    }
+
+    .time-control-panel {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+        width: 300px;
+        max-width: 90%;
+    }
+
+    .station-popup .leaflet-popup-content {
+        max-width: 250px;
+    }
+
+    .water-level-label {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.5);
+        border-radius: 4px;
+        padding: 2px 5px;
+        font-size: 11px;
+        font-weight: bold;
+        white-space: nowrap;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .water-level-label.no-data {
+        background: rgba(230, 230, 230, 0.9);
+        color: #666;
+    }
+
+    .loading {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2000;
+        display: none;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    .legend {
+        position: absolute;
+        bottom: 30px;
+        left: 20px;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+        border-radius: 50%;
+        border: 1px solid #ccc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="map-container">
+    <div id="map"></div>
+
+    <div class="time-control-panel">
+        <h5 class="mb-3">Water Level Time Control</h5>
+        <div class="mb-3">
+            <label for="datetimePicker" class="form-label">Select Date and Time:</label>
+            <input type="datetime-local" class="form-control" id="datetimePicker">
+        </div>
+        <div class="mb-2">
+            <button id="updateButton" class="btn btn-primary w-100">Update Water Levels</button>
+        </div>
+        <div id="statusMessage" class="mt-2 text-center"></div>
+        <div class="mt-3 small text-muted">
+            <p>Water levels are shown in centimeters relative to the DVR90 reference system. Colors represent different water level ranges from -15 cm to +30 cm.</p>
+        </div>
+    </div>
+
+    <div class="legend">
+        <h6 class="mb-2">Water Level Legend</h6>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #ff0000;"></div>
+            <span>&gt; 30 cm (High)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #ffa500;"></div>
+            <span>15 - 30 cm</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #3388ff;"></div>
+            <span>0 - 15 cm</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #4CAF50;"></div>
+            <span>-15 - 0 cm</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #800080;"></div>
+            <span>&lt; -15 cm (Low)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #999;"></div>
+            <span>No data</span>
+        </div>
+    </div>
+</div>
+
+<div class="loading">
+    <div class="d-flex align-items-center">
+        <div class="spinner-border text-primary me-2" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <span>Loading data...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Add a class to identify this page for JavaScript -->
+<script>
+// Make sure this runs before the map script
+document.body.classList.add('water-level-page');
+</script>
+<!-- Include map initialization script -->
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<!-- Include water level specific script -->
+<script src="{{ url_for('static', filename='js/water_level.js') }}"></script>
+{% endblock %}

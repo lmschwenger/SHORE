@@ -18,6 +18,26 @@ class WaterLevelService:
         """Set the API key for the DMI API"""
         self.api_key = api_key
 
+    def _get_station_by_id(self, station_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get station information by ID
+
+        Parameters:
+        - station_id: The ID of the DMI water level station
+
+        Returns:
+        - Dictionary with station information or None if not found
+        """
+        try:
+            stations = self.get_all_stations()
+            for station in stations:
+                if station.get("id") == station_id:
+                    return station
+            return None
+        except Exception as e:
+            self.logger.error(f"Error finding station {station_id}: {str(e)}")
+            return None
+
     def get_water_level_at_time(self, station_id: str, timestamp: Union[str, datetime.datetime],
                                 parameter_id: str = "sealev_dvr") -> Optional[Dict[str, Any]]:
         """
@@ -71,21 +91,46 @@ class WaterLevelService:
             data = response.json()
             features = data.get("features", [])
 
+            # Get the station information including coordinates
+            station_info = self._get_station_by_id(station_id)
+
             if not features:
                 self.logger.warning(f"No water level data found for station {station_id} at {timestamp_str}")
+                # Return station info with coordinates even if no water level data is found
+                if station_info:
+                    return {
+                        "value": None,
+                        "observed": timestamp_str,
+                        "stationId": station_id,
+                        "parameterId": parameter_id,
+                        "qcStatus": None,
+                        "latitude": station_info.get("latitude"),
+                        "longitude": station_info.get("longitude"),
+                        "name": station_info.get("name")
+                    }
                 return None
 
             # Find the closest reading to the requested timestamp
             closest_reading = min(features, key=lambda x: self._time_difference(
                 x.get("properties", {}).get("observed", ""), timestamp_str))
 
-            return {
+            result = {
                 "value": closest_reading.get("properties", {}).get("value"),
                 "observed": closest_reading.get("properties", {}).get("observed"),
                 "stationId": closest_reading.get("properties", {}).get("stationId"),
                 "parameterId": closest_reading.get("properties", {}).get("parameterId"),
                 "qcStatus": closest_reading.get("properties", {}).get("qcStatus")
             }
+
+            # Add station location coordinates
+            if station_info:
+                result.update({
+                    "latitude": station_info.get("latitude"),
+                    "longitude": station_info.get("longitude"),
+                    "name": station_info.get("name")
+                })
+
+            return result
 
         except Exception as e:
             self.logger.error(f"Error fetching water level data: {str(e)}")
@@ -217,3 +262,22 @@ class WaterLevelService:
         except Exception:
             # Return a large value if parsing fails
             return float('inf')
+
+    def get_all_station_levels_at_time(self, timestamp: Union[str, datetime.datetime]):
+        """
+        Get water level data from all stations at a specific time
+
+        Parameters:
+        - timestamp: The timestamp to get water level for (ISO format or datetime object)
+
+        Returns:
+        - Dictionary with all station water level data at the specified time
+        """
+        stations = self.get_all_stations()
+        station_levels = {}
+
+        for station in stations:
+            level = self.get_water_level_at_time(station['stationId'], timestamp)
+            station_levels[station['stationId']] = level
+
+        return station_levels
