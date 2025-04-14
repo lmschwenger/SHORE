@@ -14,6 +14,8 @@ class Config:
     APP_NAME = "SHORE"
     APP_DESCRIPTION = "Sentinel Hydrological Observation & Resource Explorer"
     OPENEO_PROVIDER_URL = 'https://openeo.dataspace.copernicus.eu/'
+    DMI_API_KEY = os.getenv('DMI_API_KEY', '')
+
 
 class DevelopmentConfig(Config):
     """Development configuration"""

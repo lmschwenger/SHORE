@@ -1,8 +1,8 @@
 # app/services/stac_service.py
 import datetime
 import logging
+
 import requests
-from flask import current_app
 from shapely.geometry import shape
 
 
@@ -12,6 +12,11 @@ class STACService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.stac_base_url = "https://catalogue.dataspace.copernicus.eu/stac"
+        self.water_level_service = None  # Will be set from the main view
+
+    def set_water_level_service(self, water_level_service):
+        """Set the water level service for fetching water level data"""
+        self.water_level_service = water_level_service
 
     def search_images(self, geometry, start_date=None, end_date=None, max_cloud_coverage=20):
         """
@@ -107,7 +112,16 @@ class STACService:
             response = requests.get(url)
             response.raise_for_status()
 
-            return response.json()
+            image_details = response.json()
+
+            # Add water level data if water level service is available
+            if self.water_level_service:
+                try:
+                    self._add_water_level_data(image_details)
+                except Exception as water_level_err:
+                    self.logger.error(f"Error adding water level data: {str(water_level_err)}")
+
+            return image_details
 
         except Exception as e:
             self.logger.error(f"Error getting image details: {str(e)}")
@@ -245,6 +259,32 @@ class STACService:
                 if asset_name.startswith("B") and len(asset_name) <= 3:
                     bands.append(asset_name)
 
+            # Get center coordinates for water level station lookup
+            center_lon = None
+            center_lat = None
+            if feature.get("geometry"):
+                bbox = shape(feature.get("geometry")).bounds
+                center_lon = (bbox[0] + bbox[2]) / 2
+                center_lat = (bbox[1] + bbox[3]) / 2
+
+            # Add water level data if available
+            water_level_data = None
+            nearest_station = None
+
+            if self.water_level_service and center_lon is not None and center_lat is not None:
+                try:
+                    # Find the nearest water level station
+                    nearest_station = self.water_level_service.find_nearest_station(center_lon, center_lat)
+
+                    if nearest_station and nearest_station.get("stationId"):
+                        # Get water level at the image capture time
+                        water_level_data = self.water_level_service.get_water_level_at_time(
+                            nearest_station.get("stationId"),
+                            date_obj
+                        )
+                except Exception as water_level_err:
+                    self.logger.error(f"Error fetching water level data: {str(water_level_err)}")
+
             # Create image info object
             image_info = {
                 "id": image_id,
@@ -264,6 +304,82 @@ class STACService:
                 }
             }
 
+            # Add water level data if available
+            if water_level_data:
+                image_info["waterLevel"] = {
+                    "value": water_level_data.get("value"),
+                    "observed": water_level_data.get("observed"),
+                    "stationId": water_level_data.get("stationId"),
+                    "parameterId": water_level_data.get("parameterId"),
+                    "stationName": nearest_station.get("name") if nearest_station else None,
+                    "stationDistance": nearest_station.get("distance") if nearest_station else None
+                }
+
+            # Add closest station info even if water level data is not available
+            elif nearest_station:
+                image_info["waterLevel"] = {
+                    "stationId": nearest_station.get("stationId"),
+                    "stationName": nearest_station.get("name"),
+                    "stationDistance": nearest_station.get("distance"),
+                    "value": None,
+                    "message": "Water level data not available for the image capture time"
+                }
+
             images.append(image_info)
 
         return images
+
+    def _add_water_level_data(self, image_details):
+        """Add water level data to image details"""
+        if not self.water_level_service:
+            return
+
+        # Extract the datetime from the image details
+        datetime_str = image_details.get("properties", {}).get("datetime")
+        if not datetime_str:
+            return
+
+        # Get the center of the image geometry
+        if image_details.get("geometry"):
+            bbox = shape(image_details.get("geometry")).bounds
+            center_lon = (bbox[0] + bbox[2]) / 2
+            center_lat = (bbox[1] + bbox[3]) / 2
+        else:
+            return
+
+        try:
+            # Find the nearest water level station
+            nearest_station = self.water_level_service.find_nearest_station(center_lon, center_lat)
+
+            if nearest_station and nearest_station.get("stationId"):
+                # Get water level at the image capture time
+                date_obj = datetime.datetime.fromisoformat(datetime_str.replace("Z", "+00:00"))
+                water_level_data = self.water_level_service.get_water_level_at_time(
+                    nearest_station.get("stationId"),
+                    date_obj
+                )
+
+                if water_level_data:
+                    # Add water level data to the image details
+                    if "properties" not in image_details:
+                        image_details["properties"] = {}
+
+                    image_details["properties"]["waterLevel"] = {
+                        "value": water_level_data.get("value"),
+                        "observed": water_level_data.get("observed"),
+                        "stationId": water_level_data.get("stationId"),
+                        "parameterId": water_level_data.get("parameterId"),
+                        "stationName": nearest_station.get("name"),
+                        "stationDistance": nearest_station.get("distance")
+                    }
+                else:
+                    # Add station info even if water level data is not available
+                    image_details["properties"]["waterLevel"] = {
+                        "stationId": nearest_station.get("stationId"),
+                        "stationName": nearest_station.get("name"),
+                        "stationDistance": nearest_station.get("distance"),
+                        "value": None,
+                        "message": "Water level data not available for the image capture time"
+                    }
+        except Exception as e:
+            self.logger.error(f"Error adding water level data: {str(e)}")

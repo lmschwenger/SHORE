@@ -10,6 +10,10 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
+// Initialize feature group for water level stations
+const stationsLayer = new L.FeatureGroup();
+map.addLayer(stationsLayer);
+
 // Initialize draw control
 const drawControl = new L.Control.Draw({
     draw: {
@@ -68,9 +72,11 @@ const dateToInput = document.getElementById('dateTo');
 const cloudCoverageSlider = document.getElementById('cloudCoverage');
 const cloudCoverageValue = document.getElementById('cloudCoverageValue');
 const previewImage = document.getElementById('previewImage');
+const showStationsCheckbox = document.getElementById('showStations');
 
 // Store search results globally
 let searchResults = [];
+let waterLevelStations = [];
 
 // Function to check if elements exist in the DOM
 function elementExists(element) {
@@ -121,6 +127,107 @@ if (elementExists(cloudCoverageSlider) && elementExists(cloudCoverageValue)) {
     cloudCoverageSlider.addEventListener('input', function() {
         cloudCoverageValue.textContent = this.value;
     });
+}
+
+// Load water level stations if checkbox exists
+if (elementExists(showStationsCheckbox)) {
+    showStationsCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            loadAndDisplayStations();
+        } else {
+            stationsLayer.clearLayers();
+        }
+    });
+
+    // Load stations on page load if checkbox is checked
+    if (showStationsCheckbox.checked) {
+        loadAndDisplayStations();
+    }
+}
+
+// Function to load and display water level stations
+function loadAndDisplayStations() {
+    if (waterLevelStations.length > 0) {
+        // If stations are already loaded, just display them
+        displayStations(waterLevelStations);
+        return;
+    }
+
+    // Show loading indicator
+    if (elementExists(loadingIndicator)) {
+        loadingIndicator.style.display = 'block';
+    }
+
+    // Fetch stations from API
+    fetch('/api/water_level_stations')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Hide loading indicator
+            if (elementExists(loadingIndicator)) {
+                loadingIndicator.style.display = 'none';
+            }
+
+            // Store stations globally
+            waterLevelStations = data.stations || [];
+
+            // Display stations on the map
+            displayStations(waterLevelStations);
+        })
+        .catch(error => {
+            console.error('Error fetching water level stations:', error);
+
+            // Hide loading indicator
+            if (elementExists(loadingIndicator)) {
+                loadingIndicator.style.display = 'none';
+            }
+
+            alert(`Error fetching water level stations: ${error.message}`);
+        });
+}
+
+// Function to display water level stations on the map
+function displayStations(stations) {
+    // Clear previous stations
+    stationsLayer.clearLayers();
+
+    // Add each station to the map
+    stations.forEach(station => {
+        if (station.coordinates && station.coordinates.length === 2) {
+            const [lon, lat] = station.coordinates;
+
+            // Create marker
+            const marker = L.circleMarker([lat, lon], {
+                radius: 5,
+                fillColor: '#0066ff',
+                color: '#003399',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+
+            // Add popup
+            marker.bindPopup(`
+                <div class="station-popup">
+                    <h6>${station.name}</h6>
+                    <p><strong>Station ID:</strong> ${station.stationId}</p>
+                    <p><strong>Available parameters:</strong> ${station.parameterId.join(', ')}</p>
+                </div>
+            `);
+
+            // Add to layer
+            stationsLayer.addLayer(marker);
+        }
+    });
+
+    // Adjust map view if needed
+    if (stationsLayer.getLayers().length > 0 && map.getZoom() < 7) {
+        map.fitBounds(stationsLayer.getBounds());
+    }
 }
 
 // Handle search button click
@@ -259,17 +366,25 @@ function exportResults() {
     // Create CSV content
     let csvContent = 'data:text/csv;charset=utf-8,';
 
-    // Add header row
-    csvContent += 'ID,Date,Cloud Coverage,Sun Elevation,Sun Azimuth,Preview URL\n';
+    // Add header row - now with water level columns
+    csvContent += 'ID,Date,Cloud Coverage,Sun Elevation,Sun Azimuth,Water Level,Station ID,Station Name,Preview URL\n';
 
     // Add data rows
     searchResults.forEach(image => {
+        // Extract water level data if available
+        const waterLevel = image.waterLevel ? image.waterLevel.value : '';
+        const stationId = image.waterLevel ? image.waterLevel.stationId : '';
+        const stationName = image.waterLevel ? image.waterLevel.stationName : '';
+
         const row = [
             image.id,
             image.date,
             image.cloudCoverage,
             image.sun_elevation || '',
             image.sun_azimuth || '',
+            waterLevel,
+            stationId,
+            stationName,
             image.preview_url || ''
         ];
 
@@ -322,6 +437,26 @@ function populateResultsTable(images) {
             console.error('Error formatting date:', e);
         }
 
+        // Format water level data if available
+        let waterLevelDisplay = '<span class="text-muted">Not available</span>';
+        if (image.waterLevel && image.waterLevel.value !== null) {
+            waterLevelDisplay = `
+                <span class="badge bg-info">
+                    ${parseFloat(image.waterLevel.value).toFixed(1)} cm
+                </span>
+                <small class="d-block text-muted">
+                    Station: ${image.waterLevel.stationName || image.waterLevel.stationId}
+                </small>
+            `;
+        } else if (image.waterLevel && image.waterLevel.stationId) {
+            waterLevelDisplay = `
+                <span class="text-muted">No data</span>
+                <small class="d-block text-muted">
+                    Station: ${image.waterLevel.stationName || image.waterLevel.stationId}
+                </small>
+            `;
+        }
+
         // Create table row
         const row = document.createElement('tr');
 
@@ -337,6 +472,7 @@ function populateResultsTable(images) {
             <td title="${image.id}">${truncateText(image.id, 20)}</td>
             <td>${dateDisplay}</td>
             <td>${image.cloudCoverage}%</td>
+            <td>${waterLevelDisplay}</td>
             <td>
                 <div class="btn-group">
                     <button class="btn btn-sm btn-outline-primary view-details-btn" data-image-id="${image.id}">
@@ -514,6 +650,9 @@ function viewImageDetails(imageId) {
             return response.json();
         })
         .then(details => {
+            // Find water level data
+            const waterLevel = details.properties?.waterLevel || null;
+
             // Create modal to display the details
             let modalContent = `
                 <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
@@ -527,6 +666,9 @@ function viewImageDetails(imageId) {
                                 <ul class="nav nav-tabs" id="detailTabs" role="tablist">
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab">Summary</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="waterLevel-tab" data-bs-toggle="tab" data-bs-target="#waterLevel" type="button" role="tab">Water Level</button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link" id="properties-tab" data-bs-toggle="tab" data-bs-target="#properties" type="button" role="tab">Properties</button>
@@ -566,6 +708,15 @@ function viewImageDetails(imageId) {
                                                             <th scope="row">Instrument</th>
                                                             <td>${details.properties?.instrument || 'N/A'}</td>
                                                         </tr>
+                                                        ${waterLevel ? `
+                                                        <tr>
+                                                            <th scope="row">Water Level</th>
+                                                            <td>${waterLevel.value !== null ? `${parseFloat(waterLevel.value).toFixed(1)} cm` : 'Not available'}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th scope="row">Station</th>
+                                                            <td>${waterLevel.stationName || waterLevel.stationId || 'N/A'}</td>
+                                                        </tr>` : ''}
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -583,6 +734,86 @@ function viewImageDetails(imageId) {
                                                 }
                                             </div>
                                         </div>
+                                    </div>
+
+                                    <!-- Water Level Tab -->
+                                    <div class="tab-pane fade" id="waterLevel" role="tabpanel">
+                                        ${waterLevel ? `
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0">Water Level Data</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <table class="table table-sm">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <th scope="row">Value</th>
+                                                                    <td>${waterLevel.value !== null ? `${parseFloat(waterLevel.value).toFixed(1)} cm (${waterLevel.parameterId})` : 'Not available'}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th scope="row">Observation Time</th>
+                                                                    <td>${waterLevel.observed || 'N/A'}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th scope="row">Station ID</th>
+                                                                    <td>${waterLevel.stationId || 'N/A'}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th scope="row">Station Name</th>
+                                                                    <td>${waterLevel.stationName || 'N/A'}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th scope="row">QC Status</th>
+                                                                    <td>${waterLevel.qcStatus || 'N/A'}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th scope="row">Distance from Image Center</th>
+                                                                    <td>${waterLevel.stationDistance ? (waterLevel.stationDistance * 111).toFixed(2) + ' km (approx.)' : 'N/A'}</td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                                <div class="alert alert-info mt-3">
+                                                    <small>
+                                                        <i class="bi bi-info-circle"></i> Water level data is provided from the nearest DMI station at the time of satellite image acquisition.
+                                                        The station may be located some distance from the image center, so consider this when analyzing coastal changes.
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0">About Water Level Data</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p class="small">
+                                                            <strong>Parameter ID:</strong> ${waterLevel.parameterId || 'N/A'}<br>
+                                                            <strong>DVR<strong>Parameter ID:</strong> ${waterLevel.parameterId || 'N/A'}<br>
+                                                            <strong>DVR90:</strong> Danish Vertical Reference 1990, which is a height reference system used in Denmark.
+                                                        </p>
+                                                        <hr>
+                                                        <p class="small">
+                                                            Water level is measured in centimeters relative to the DVR90 reference system.
+                                                            Positive values indicate water levels above the reference, while negative values indicate levels below.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        ` : `
+                                        <div class="alert alert-warning">
+                                            <h6><i class="bi bi-exclamation-triangle me-2"></i>No Water Level Data</h6>
+                                            <p>Water level data is not available for this image. This could be because:</p>
+                                            <ul>
+                                                <li>No water level station was found near the image location</li>
+                                                <li>The nearest station does not have data for the image acquisition time</li>
+                                                <li>The DMI API key has not been configured</li>
+                                            </ul>
+                                        </div>
+                                        `}
                                     </div>
 
                                     <!-- Properties Tab -->
