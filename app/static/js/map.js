@@ -116,6 +116,9 @@ geometryTypeRadios.forEach(function(radio) {
 // app/static/js/map.js - Update the search button handler
 
 // Handle search button click
+// Modify the search button event handler in app/static/js/map.js
+
+// Handle search button click
 searchButton.addEventListener('click', function() {
     const selectedType = document.querySelector('input[name="geometryType"]:checked').value;
     let geometry = null;
@@ -176,9 +179,8 @@ searchButton.addEventListener('click', function() {
 
         // Handle authentication required response
         if (data.error === "Not authenticated with OpenEO") {
-            if (confirm("You need to authenticate with Copernicus to access satellite imagery. Proceed to login?")) {
-                window.location.href = data.auth_url;
-            }
+            // Automatically redirect to authentication page
+            window.location.href = data.auth_url;
             return;
         }
 
@@ -195,6 +197,8 @@ searchButton.addEventListener('click', function() {
         alert('An error occurred while searching for images.');
     });
 });
+
+// Rest of the file remains the same...
 
 // Function to display results
 function displayResults(images) {
