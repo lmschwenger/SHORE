@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="Implemented water level" />
+    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="prepare for deployment">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -194,7 +197,23 @@
       <option name="project" value="LOCAL" />
       <updated>1744633463845</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="prepare for deployment">
+      <option name="closed" value="true" />
+      <created>1744634655088</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1744634655088</updated>
+    </task>
+    <task id="LOCAL-00007" summary="prepare for deployment">
+      <option name="closed" value="true" />
+      <created>1744634805599</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1744634805599</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -202,6 +221,7 @@
     <MESSAGE value="WIP OpenEO Auth" />
     <MESSAGE value="WIP STAC API" />
     <MESSAGE value="Implemented water level" />
-    <option name="LAST_COMMIT_MESSAGE" value="Implemented water level" />
+    <MESSAGE value="prepare for deployment" />
+    <option name="LAST_COMMIT_MESSAGE" value="prepare for deployment" />
   </component>
 </project>
