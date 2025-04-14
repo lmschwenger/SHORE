@@ -59,13 +59,18 @@ const geometryTypeRadios = document.querySelectorAll('input[name="geometryType"]
 const drawInstructions = document.getElementById('drawInstructions');
 const importOptions = document.getElementById('importOptions');
 const searchButton = document.getElementById('searchButton');
+const resultsButton = document.getElementById('resultsButton');
+const resultsCount = document.getElementById('resultsCount');
+const resultsTableBody = document.getElementById('resultsTableBody');
 const loadingIndicator = document.querySelector('.loading');
-const resultsContainer = document.getElementById('results');
-const imagesList = document.getElementById('imagesList');
 const dateFromInput = document.getElementById('dateFrom');
 const dateToInput = document.getElementById('dateTo');
 const cloudCoverageSlider = document.getElementById('cloudCoverage');
 const cloudCoverageValue = document.getElementById('cloudCoverageValue');
+const previewImage = document.getElementById('previewImage');
+
+// Store search results globally
+let searchResults = [];
 
 // Function to check if elements exist in the DOM
 function elementExists(element) {
@@ -156,6 +161,9 @@ searchButton.addEventListener('click', function() {
     searchButton.disabled = true;
     searchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Searching...';
 
+    // Hide results button (will show again when results are ready)
+    resultsButton.style.display = 'none';
+
     // Get date range and cloud coverage
     let startDate = null;
     let endDate = null;
@@ -197,8 +205,14 @@ searchButton.addEventListener('click', function() {
         searchButton.disabled = false;
         searchButton.textContent = 'Search for Images';
 
-        // Display results
-        displayResults(data.images);
+        // Store the results globally
+        searchResults = data.images || [];
+
+        // Display results count and show results button
+        updateResultsButton(searchResults.length);
+
+        // Clear and populate results table
+        populateResultsTable(searchResults);
     })
     .catch(error => {
         console.error('Error:', error);
@@ -211,29 +225,94 @@ searchButton.addEventListener('click', function() {
     });
 });
 
-// Function to display results
-function displayResults(images) {
+// Function to update the results button
+function updateResultsButton(count) {
+    if (count > 0) {
+        resultsCount.textContent = count;
+        resultsButton.style.display = 'block';
+
+        // Also update the count in the modal header
+        const modalCount = document.getElementById('resultsModalCount');
+        if (modalCount) {
+            modalCount.textContent = count + ' images';
+        }
+
+        // Add export functionality
+        const exportBtn = document.getElementById('exportResultsBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', exportResults);
+        }
+    } else {
+        resultsButton.style.display = 'none';
+        // Show a message for no results
+        alert('No images found for the selected area and time period.');
+    }
+}
+
+// Function to export results as CSV
+function exportResults() {
+    if (!searchResults || searchResults.length === 0) {
+        alert('No results to export');
+        return;
+    }
+
+    // Create CSV content
+    let csvContent = 'data:text/csv;charset=utf-8,';
+
+    // Add header row
+    csvContent += 'ID,Date,Cloud Coverage,Sun Elevation,Sun Azimuth,Preview URL\n';
+
+    // Add data rows
+    searchResults.forEach(image => {
+        const row = [
+            image.id,
+            image.date,
+            image.cloudCoverage,
+            image.sun_elevation || '',
+            image.sun_azimuth || '',
+            image.preview_url || ''
+        ];
+
+        // Escape any fields with commas by wrapping in quotes
+        const escapedRow = row.map(field => {
+            if (field && field.toString().includes(',')) {
+                return `"${field}"`;
+            }
+            return field;
+        });
+
+        csvContent += escapedRow.join(',') + '\n';
+    });
+
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'sentinel_search_results.csv');
+    document.body.appendChild(link);
+
+    // Trigger download
+    link.click();
+
+    // Clean up
+    document.body.removeChild(link);
+}
+
+// Function to populate the results table
+function populateResultsTable(images) {
     // Clear previous results
-    imagesList.innerHTML = '';
+    resultsTableBody.innerHTML = '';
 
     // Check if we have any images
     if (!images || images.length === 0) {
-        imagesList.innerHTML = '<div class="alert alert-info">No images found for the selected area and time period.</div>';
-        resultsContainer.style.display = 'block';
         return;
     }
 
     // Sort images by date (newest first)
     images.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // Display result count
-    imagesList.innerHTML = `<div class="alert alert-success mb-3">Found ${images.length} images</div>`;
-
-    // Display each image
-    images.forEach(image => {
-        const imageItem = document.createElement('div');
-        imageItem.className = 'card mb-3 image-item';
-
+    // Add each image to the table
+    images.forEach((image, index) => {
         // Format date
         let dateDisplay = 'Unknown date';
         try {
@@ -243,62 +322,37 @@ function displayResults(images) {
             console.error('Error formatting date:', e);
         }
 
-        // Create image info
-        imageItem.innerHTML = `
-            <div class="card-body">
-                <h4 class="card-title">${image.id}</h4>
-                <div class="image-preview mb-3">
-                    ${image.preview_url
-                        ? `<img src="${image.preview_url}" class="img-fluid rounded" alt="Preview" onclick="openFullSizeImage('${image.preview_url}')">`
-                        : '<div class="alert alert-info">No preview available</div>'
-                    }
-                </div>
-                <div class="image-metadata">
-                    <table class="table table-sm">
-                        <tbody>
-                            <tr>
-                                <th scope="row">Date</th>
-                                <td>${dateDisplay}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Cloud Cover</th>
-                                <td>${image.cloudCoverage}%</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Available Bands</th>
-                                <td>${image.bands.join(', ')}</td>
-                            </tr>
-                            ${image.sun_elevation ? `
-                            <tr>
-                                <th scope="row">Sun Elevation</th>
-                                <td>${image.sun_elevation.toFixed(2)}°</td>
-                            </tr>` : ''}
-                            ${image.sun_azimuth ? `
-                            <tr>
-                                <th scope="row">Sun Azimuth</th>
-                                <td>${image.sun_azimuth.toFixed(2)}°</td>
-                            </tr>` : ''}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="btn-group w-100 mt-2">
-                    <button class="btn btn-sm btn-primary view-details-btn" data-image-id="${image.id}">
-                        <i class="bi bi-info-circle"></i> View Details
+        // Create table row
+        const row = document.createElement('tr');
+
+        // Create cells
+        row.innerHTML = `
+            <td>
+                ${image.preview_url
+                    ? `<img src="${image.preview_url}" class="preview-thumbnail"
+                         alt="Preview" onclick="showPreview('${image.preview_url}', '${image.id}')">`
+                    : '<div class="text-center text-muted"><i class="bi bi-image"></i> No preview</div>'
+                }
+            </td>
+            <td title="${image.id}">${truncateText(image.id, 20)}</td>
+            <td>${dateDisplay}</td>
+            <td>${image.cloudCoverage}%</td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary view-details-btn" data-image-id="${image.id}">
+                        <i class="bi bi-info-circle"></i> Details
                     </button>
-                    <button class="btn btn-sm btn-success download-btn" data-image-id="${image.id}">
+                    <button class="btn btn-sm btn-outline-success download-btn" data-image-id="${image.id}">
                         <i class="bi bi-download"></i> Download
                     </button>
                 </div>
-            </div>
+            </td>
         `;
 
-        imagesList.appendChild(imageItem);
+        resultsTableBody.appendChild(row);
     });
 
-    // Show the results container
-    resultsContainer.style.display = 'block';
-
-    // Add event listeners to buttons
+    // Add event listeners to the buttons
     document.querySelectorAll('.download-btn').forEach(button => {
         button.addEventListener('click', function() {
             const imageId = this.getAttribute('data-image-id');
@@ -314,42 +368,68 @@ function displayResults(images) {
     });
 }
 
-// Function to open full-size image in a modal
-function openFullSizeImage(url) {
-    // Create modal
-    const modalHtml = `
-        <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Full Size Preview</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <img src="${url}" class="img-fluid" alt="Full size preview">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Add modal to the DOM
-    const modalContainer = document.createElement('div');
-    modalContainer.innerHTML = modalHtml;
-    document.body.appendChild(modalContainer);
-
-    // Show the modal
-    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
-    modal.show();
-
-    // Remove modal from DOM after it's hidden
-    document.getElementById('imageModal').addEventListener('hidden.bs.modal', function () {
-        document.body.removeChild(modalContainer);
-    });
+// Helper function to truncate text with ellipsis
+function truncateText(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
 }
+
+// Function to show image preview in modal
+function showPreview(url, imageId) {
+    // Set the image source
+    if (elementExists(previewImage)) {
+        previewImage.src = url;
+
+        // Set the modal title
+        const previewModalLabel = document.getElementById('previewModalLabel');
+        if (previewModalLabel) {
+            previewModalLabel.textContent = `Preview: ${imageId}`;
+        }
+
+        // Show the modal
+        const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+        previewModal.show();
+    }
+}
+
+// Make the showPreview function globally available
+window.showPreview = showPreview;
+
+// Function to open full-size image in a modal (preserved for backward compatibility)
+function openFullSizeImage(url) {
+    showPreview(url, 'Image');
+}
+
+// Make the openFullSizeImage function globally available
+window.openFullSizeImage = openFullSizeImage;
+
+// Function to toggle fullscreen for preview image
+function toggleFullscreen() {
+    const imageModal = document.getElementById('previewModal');
+
+    if (!document.fullscreenElement) {
+        // If not in fullscreen mode, enter fullscreen
+        if (imageModal.requestFullscreen) {
+            imageModal.requestFullscreen();
+        } else if (imageModal.webkitRequestFullscreen) { /* Safari */
+            imageModal.webkitRequestFullscreen();
+        } else if (imageModal.msRequestFullscreen) { /* IE11 */
+            imageModal.msRequestFullscreen();
+        }
+    } else {
+        // If in fullscreen mode, exit fullscreen
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE11 */
+            document.msExitFullscreen();
+        }
+    }
+}
+
+// Make toggleFullscreen function globally available
+window.toggleFullscreen = toggleFullscreen;
 
 // Function to show download options for an image
 function showDownloadOptions(imageId) {
@@ -491,9 +571,14 @@ function viewImageDetails(imageId) {
                                             </div>
                                             <div class="col-md-6">
                                                 ${details.assets?.preview?.href ?
-                                                    `<img src="${details.assets.preview.href}" class="img-fluid rounded" alt="Preview">` :
+                                                    `<img src="${details.assets.preview.href}" class="img-fluid rounded" alt="Preview"
+                                                         onclick="showPreview('${details.assets.preview.href}', '${details.id}')">` :
                                                     details.assets?.thumbnail?.href ?
-                                                    `<img src="${details.assets.thumbnail.href}" class="img-fluid rounded" alt="Thumbnail">` :
+                                                    `<img src="${details.assets.thumbnail.href}" class="img-fluid rounded" alt="Thumbnail"
+                                                         onclick="showPreview('${details.assets.thumbnail.href}', '${details.id}')">` :
+                                                    details.assets?.overview?.href ?
+                                                    `<img src="${details.assets.overview.href}" class="img-fluid rounded" alt="Overview"
+                                                         onclick="showPreview('${details.assets.overview.href}', '${details.id}')">` :
                                                     '<div class="alert alert-info">No preview available</div>'
                                                 }
                                             </div>

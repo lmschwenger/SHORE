@@ -4,15 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="WIP OpenEO Auth">
-      <change afterPath="$PROJECT_DIR$/app/services/stac_service.py" afterDir="false" />
+    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="WIP STAC API">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/openeo_service.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/static/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/css/style.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/static/js/map.js" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/js/map.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/base.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -187,12 +182,21 @@
       <option name="project" value="LOCAL" />
       <updated>1744617689133</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="WIP STAC API">
+      <option name="closed" value="true" />
+      <created>1744626214048</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1744626214048</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="First commit" />
     <MESSAGE value="WIP OpenEO Auth" />
-    <option name="LAST_COMMIT_MESSAGE" value="WIP OpenEO Auth" />
+    <MESSAGE value="WIP STAC API" />
+    <option name="LAST_COMMIT_MESSAGE" value="WIP STAC API" />
   </component>
 </project>
