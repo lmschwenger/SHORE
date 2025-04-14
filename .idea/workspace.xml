@@ -4,15 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="Added logo and readme">
-      <change afterPath="$PROJECT_DIR$/app/static/js/water_level.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/templates/waterlevel.html" afterDir="false" />
+    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="Working on water level overview">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/stac_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/stac_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/water_level_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/water_level_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/static/js/map.js" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/js/map.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/static/js/water_level.js" beforeDir="false" afterPath="$PROJECT_DIR$/app/static/js/water_level.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/waterlevel.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/waterlevel.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/views/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -258,7 +254,15 @@
       <option name="project" value="LOCAL" />
       <updated>1744651093664</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Working on water level overview">
+      <option name="closed" value="true" />
+      <created>1744667388057</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1744667388057</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -268,7 +272,8 @@
     <MESSAGE value="Implemented water level" />
     <MESSAGE value="prepare for deployment" />
     <MESSAGE value="Added logo and readme" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added logo and readme" />
+    <MESSAGE value="Working on water level overview" />
+    <option name="LAST_COMMIT_MESSAGE" value="Working on water level overview" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

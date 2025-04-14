@@ -1,3 +1,6 @@
+// Detect which page we're on
+const isWaterLevelPage = document.body.classList.contains('water-level-page');
+
 // Initialize the map centered on Denmark
 const map = L.map('map').setView([56.0, 10.0], 6);
 
@@ -14,49 +17,63 @@ map.addLayer(drawnItems);
 const stationsLayer = new L.FeatureGroup();
 map.addLayer(stationsLayer);
 
-// Initialize draw control
-const drawControl = new L.Control.Draw({
-    draw: {
-        marker: false,
-        circlemarker: false,
-        circle: false,
-        polyline: false,
-        polygon: {
-            allowIntersection: false,
-            drawError: {
-                color: '#e1e100',
-                message: '<strong>Error:</strong> Polygon edges cannot cross!'
+// Only initialize these for the main search page (not water level page)
+if (!isWaterLevelPage) {
+    // Initialize feature group to store drawn items
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    // Initialize draw control
+    const drawControl = new L.Control.Draw({
+        draw: {
+            marker: false,
+            circlemarker: false,
+            circle: false,
+            polyline: false,
+            polygon: {
+                allowIntersection: false,
+                drawError: {
+                    color: '#e1e100',
+                    message: '<strong>Error:</strong> Polygon edges cannot cross!'
+                },
+                shapeOptions: {
+                    color: '#3388ff'
+                }
             },
-            shapeOptions: {
-                color: '#3388ff'
+            rectangle: {
+                shapeOptions: {
+                    color: '#3388ff'
+                }
             }
         },
-        rectangle: {
-            shapeOptions: {
-                color: '#3388ff'
-            }
+        edit: {
+            featureGroup: drawnItems,
+            remove: true
         }
-    },
-    edit: {
-        featureGroup: drawnItems,
-        remove: true
-    }
-});
-map.addControl(drawControl);
-
-// Handle draw created event
-map.on(L.Draw.Event.CREATED, function(event) {
-    drawnItems.clearLayers();
-    drawnItems.addLayer(event.layer);
-});
-
-// Handle draw deleted event
-map.on(L.Draw.Event.DELETED, function(event) {
-    const layers = event.layers;
-    layers.eachLayer(function(layer) {
-        drawnItems.removeLayer(layer);
     });
-});
+    map.addControl(drawControl);
+
+    // Handle draw created event
+    map.on(L.Draw.Event.CREATED, function(event) {
+        drawnItems.clearLayers();
+        drawnItems.addLayer(event.layer);
+    });
+
+    // Handle draw deleted event
+    map.on(L.Draw.Event.DELETED, function(event) {
+        const layers = event.layers;
+        layers.eachLayer(function(layer) {
+            drawnItems.removeLayer(layer);
+        });
+    });
+}
+
+// Export map and layers for use in other scripts
+window.mapInstance = map;
+window.stationsLayer = stationsLayer;
+if (!isWaterLevelPage) {
+    window.drawnItems = drawnItems;
+}
 
 // DOM elements
 const geometryTypeRadios = document.querySelectorAll('input[name="geometryType"]');

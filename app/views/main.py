@@ -79,7 +79,19 @@ def download_links(image_id):
 def water_level_stations():
     """Get all water level stations"""
     stations = water_level_service.get_all_stations()
-    return jsonify({"stations": stations})
+
+    # Process the stations to ensure they have latitude/longitude
+    processed_stations = []
+    for station in stations:
+        # Check if coordinates exist and extract lat/lon
+        if 'coordinates' in station and isinstance(station['coordinates'], list) and len(station['coordinates']) >= 2:
+            # Add latitude and longitude for easier access in JavaScript
+            station['longitude'] = station['coordinates'][0]
+            station['latitude'] = station['coordinates'][1]
+
+        processed_stations.append(station)
+
+    return jsonify({"stations": processed_stations})
 
 
 @main_bp.route('/api/water_level_at_time', methods=['GET'])
@@ -94,8 +106,16 @@ def water_levels_for_all_stations():
         stations = water_level_service.get_all_stations()
 
         # Filter stations to only include those with valid coordinates
-        valid_stations = [s for s in stations if 'latitude' in s and 'longitude' in s
-                          and s['latitude'] is not None and s['longitude'] is not None]
+        valid_stations = []
+        for station in stations:
+            # Extract coordinates
+            if 'coordinates' in station and isinstance(station['coordinates'], list) and len(
+                    station['coordinates']) >= 2:
+                station['longitude'] = station['coordinates'][0]
+                station['latitude'] = station['coordinates'][1]
+                valid_stations.append(station)
+            elif 'longitude' in station and 'latitude' in station:
+                valid_stations.append(station)
 
         # Get water level for each station at the specified time
         station_levels = []
@@ -108,7 +128,7 @@ def water_levels_for_all_stations():
             water_level = water_level_service.get_water_level_at_time(
                 station_id=station_id,
                 timestamp=time_str,
-                parameter_id='sealev_dvr'
+                parameter_id='sealev_dvr'  # Danish Vertical Reference 1990
             )
 
             # Create station data entry even if water level is null
@@ -126,8 +146,6 @@ def water_levels_for_all_stations():
     except Exception as e:
         current_app.logger.error(f"Error getting water levels: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
-
 
 
 @main_bp.route('/api/nearest_station', methods=['GET'])
@@ -149,7 +167,10 @@ def nearest_station():
 
 @main_bp.route('/waterlevel')
 def water_level():
-    return render_template('waterlevel.html')
+    """Render the water level overview page"""
+    return render_template('waterlevel.html',
+                           app_name=current_app.config['APP_NAME'],
+                           app_description=current_app.config['APP_DESCRIPTION'])
 
 
 @main_bp.route('/')
