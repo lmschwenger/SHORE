@@ -1,0 +1,117 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.content-container {
+    padding: 0;
+    height: calc(100vh - 56px - 56px); /* Subtract navbar and footer heights */
+}
+
+#map-container {
+    height: 100%;
+    position: relative;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+}
+
+.sidebar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 350px;
+    max-height: calc(100% - 20px);
+    background: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.image-item {
+    transition: transform 0.2s ease-in-out;
+}
+
+.image-item:hover {
+    transform: translateY(-3px);
+}
+
+.image-preview img {
+    cursor: pointer;
+    max-height: 200px;
+    width: 100%;
+    object-fit: cover;
+}
+
+/* New styles for results button */
+#resultsButton {
+    display: none;
+    background-color: #28a745;
+    color: white;
+    animation: pulse 2s infinite;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+#resultsButton:hover {
+    transform: scale(1.03);
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+/* Results modal table styles */
+#resultsTable {
+    width: 100%;
+}
+
+#resultsTable th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
+}
+
+.preview-thumbnail {
+    width: 100px;
+    height: 75px;
+    object-fit: cover;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* Pagination styles */
+.page-link {
+    color: #3388ff;
+}
+
+.page-item.active .page-link {
+    background-color: #3388ff;
+    border-color: #3388ff;
+}
+
+.page-link:focus, .page-link:hover {
+    color: #0056b3;
+}
+
+/* Loading indicator */
+.loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    display: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}

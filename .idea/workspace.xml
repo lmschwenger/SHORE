@@ -4,10 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="Rearranged navbar items.">
-      <change afterPath="$PROJECT_DIR$/app/templates/landing.html" afterDir="false" />
+    <list default="true" id="35a57d07-2e8d-4960-93a8-b2952c2db60d" name="Changes" comment="Refactor map.js for clarity and functionality improvements&#10;&#10;Refactored and streamlined the draw control initialization and event handling for better readability and functionality, ensuring compatibility with multiple pages. Improved results table population logic and incorporated safeguards to handle missing elements or invalid data gracefully.">
+      <change afterPath="$PROJECT_DIR$/app/static/css/index.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/static/css/landing.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/static/css/waterlevel.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/landing.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/landing.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/templates/waterlevel.html" beforeDir="false" afterPath="$PROJECT_DIR$/app/templates/waterlevel.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,19 +59,19 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "Python.__init__.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.run.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/lasse/Downloads/ml-llm-251.23774.42.24.zip",
-    "settings.editor.selected.configurable": "preferences.updates"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;Python.__init__.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/lasse/Downloads/ml-llm-251.23774.42.24.zip&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.updates&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\Udvikling\SHORE\app" />
@@ -268,7 +273,23 @@
       <option name="project" value="LOCAL" />
       <updated>1744707338415</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Added landing page">
+      <option name="closed" value="true" />
+      <created>1744709225630</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1744709225630</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Refactor map.js for clarity and functionality improvements&#10;&#10;Refactored and streamlined the draw control initialization and event handling for better readability and functionality, ensuring compatibility with multiple pages. Improved results table population logic and incorporated safeguards to handle missing elements or invalid data gracefully.">
+      <option name="closed" value="true" />
+      <created>1744721032428</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1744721032428</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -280,7 +301,10 @@
     <MESSAGE value="Added logo and readme" />
     <MESSAGE value="Working on water level overview" />
     <MESSAGE value="Rearranged navbar items." />
-    <option name="LAST_COMMIT_MESSAGE" value="Rearranged navbar items." />
+    <MESSAGE value="Added landing page" />
+    <MESSAGE value="Update workspace.xml to reflect landing page changes&#10;&#10;Adjusted `workspace.xml` to include updates related to the new landing page. This includes task management entries and the latest commit message for enhanced traceability and organization." />
+    <MESSAGE value="Refactor map.js for clarity and functionality improvements&#10;&#10;Refactored and streamlined the draw control initialization and event handling for better readability and functionality, ensuring compatibility with multiple pages. Improved results table population logic and incorporated safeguards to handle missing elements or invalid data gracefully." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor map.js for clarity and functionality improvements&#10;&#10;Refactored and streamlined the draw control initialization and event handling for better readability and functionality, ensuring compatibility with multiple pages. Improved results table population logic and incorporated safeguards to handle missing elements or invalid data gracefully." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
