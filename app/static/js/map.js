@@ -17,14 +17,11 @@ map.addLayer(drawnItems);
 const stationsLayer = new L.FeatureGroup();
 map.addLayer(stationsLayer);
 
-// Only initialize these for the main search page (not water level page)
+// Only initialize the draw control for the main search page (not water level page)
+let drawControl;
 if (!isWaterLevelPage) {
-    // Initialize feature group to store drawn items
-    const drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
-
     // Initialize draw control
-    const drawControl = new L.Control.Draw({
+    drawControl = new L.Control.Draw({
         draw: {
             marker: false,
             circlemarker: false,
@@ -57,6 +54,7 @@ if (!isWaterLevelPage) {
     map.on(L.Draw.Event.CREATED, function(event) {
         drawnItems.clearLayers();
         drawnItems.addLayer(event.layer);
+        console.log('Layer added to drawnItems:', drawnItems.getLayers().length);
     });
 
     // Handle draw deleted event
@@ -65,15 +63,14 @@ if (!isWaterLevelPage) {
         layers.eachLayer(function(layer) {
             drawnItems.removeLayer(layer);
         });
+        console.log('Layer deleted from drawnItems:', drawnItems.getLayers().length);
     });
 }
 
 // Export map and layers for use in other scripts
 window.mapInstance = map;
 window.stationsLayer = stationsLayer;
-if (!isWaterLevelPage) {
-    window.drawnItems = drawnItems;
-}
+window.drawnItems = drawnItems;
 
 // DOM elements
 const geometryTypeRadios = document.querySelectorAll('input[name="geometryType"]');
@@ -118,14 +115,13 @@ function elementExists(element) {
 }
 
 // Show/hide appropriate options based on selected geometry type
-function toggleOptions(option
-) {
-    if (!option || !option.value) {
-        console.warn("Invalid option provided to toggleOptions");
+function toggleOptions() {
+    const selectedType = document.querySelector('input[name="geometryType"]:checked')?.value;
+
+    if (!selectedType) {
+        console.warn("No geometry type selected");
         return; // Early return to prevent errors
     }
-
-    const selectedType = document.querySelector('input[name="geometryType"]:checked').value;
 
     if (elementExists(drawInstructions)) {
         drawInstructions.style.display = selectedType === 'draw' ? 'block' : 'none';
@@ -136,20 +132,28 @@ function toggleOptions(option
     }
 
     // Toggle draw control
-    if (selectedType === 'draw' && !map.drawControl) {
-        map.addControl(drawControl);
-    } else if (selectedType === 'import' && map.drawControl) {
-        map.removeControl(drawControl);
+    if (selectedType === 'draw' && !isWaterLevelPage && drawControl) {
+        if (!map.drawControl) {
+            map.addControl(drawControl);
+            map.drawControl = true;
+        }
+    } else if (selectedType === 'import' && !isWaterLevelPage && drawControl) {
+        if (map.drawControl) {
+            map.removeControl(drawControl);
+            map.drawControl = false;
+        }
     }
 }
 
 // Initialize the options display
-toggleOptions();
+if (geometryTypeRadios.length > 0) {
+    toggleOptions();
 
-// Add event listeners to the radio buttons
-geometryTypeRadios.forEach(function(radio) {
-    radio.addEventListener('change', toggleOptions);
-});
+    // Add event listeners to the radio buttons
+    geometryTypeRadios.forEach(function(radio) {
+        radio.addEventListener('change', toggleOptions);
+    });
+}
 
 // Initialize date pickers with default values
 if (elementExists(dateFromInput) && elementExists(dateToInput)) {
@@ -394,71 +398,78 @@ function performSearch(page = 1) {
 }
 
 // Handle search button click
-searchButton.addEventListener('click', function() {
-    const selectedType = document.querySelector('input[name="geometryType"]:checked').value;
-    let geometry = null;
+if (searchButton) {
+    searchButton.addEventListener('click', function() {
+        const selectedType = document.querySelector('input[name="geometryType"]:checked').value;
+        let geometry = null;
 
-    if (selectedType === 'draw') {
-        if (drawnItems.getLayers().length === 0) {
-            alert('Please draw a polygon or rectangle on the map first.');
-            return;
+        if (selectedType === 'draw') {
+            console.log('Checking drawn items:', drawnItems.getLayers().length);
+            if (drawnItems.getLayers().length === 0) {
+                alert('Please draw a polygon or rectangle on the map first.');
+                return;
+            }
+
+            const layer = drawnItems.getLayers()[0];
+            geometry = layer.toGeoJSON().geometry;
+        } else if (selectedType === 'import') {
+            const wktText = document.getElementById('wktInput').value.trim();
+            const fileInput = document.getElementById('fileInput');
+
+            if (!wktText && (!fileInput || !fileInput.files.length)) {
+                alert('Please select a file or paste WKT.');
+                return;
+            }
+
+            // If using WKT, send it for processing
+            if (wktText) {
+                // This would require a server-side WKT parser
+                alert('WKT parsing is not implemented yet. Please draw on the map instead.');
+                return;
+            } else if (fileInput && fileInput.files.length) {
+                // Handle file processing via FormData
+                alert('File import is not implemented yet. Please draw on the map instead.');
+                return;
+            }
         }
 
-        const layer = drawnItems.getLayers()[0];
-        geometry = layer.toGeoJSON().geometry;
-    } else if (selectedType === 'import') {
-        const wktText = document.getElementById('wktInput').value.trim();
-        const fileInput = document.getElementById('fileInput');
+        // Get date range and cloud coverage
+        let startDate = null;
+        let endDate = null;
+        let maxCloudCoverage = 20;
 
-        if (!wktText && (!fileInput || !fileInput.files.length)) {
-            alert('Please select a file or paste WKT.');
-            return;
+        if (elementExists(dateFromInput) && elementExists(dateToInput)) {
+            startDate = dateFromInput.value;
+            endDate = dateToInput.value;
         }
 
-        // If using WKT, send it for processing
-        if (wktText) {
-            // This would require a server-side WKT parser
-            alert('WKT parsing is not implemented yet. Please draw on the map instead.');
-            return;
-        } else if (fileInput && fileInput.files.length) {
-            // Handle file processing via FormData
-            alert('File import is not implemented yet. Please draw on the map instead.');
-            return;
+        if (elementExists(cloudCoverageSlider)) {
+            maxCloudCoverage = parseInt(cloudCoverageSlider.value);
         }
-    }
 
-    // Get date range and cloud coverage
-    let startDate = null;
-    let endDate = null;
-    let maxCloudCoverage = 20;
+        // Get results per page if the element exists
+        if (elementExists(resultsPerPageSelect)) {
+            searchState.resultsPerPage = parseInt(resultsPerPageSelect.value);
+        }
 
-    if (elementExists(dateFromInput) && elementExists(dateToInput)) {
-        startDate = dateFromInput.value;
-        endDate = dateToInput.value;
-    }
+        // Update search state
+        searchState.geometry = geometry;
+        searchState.startDate = startDate;
+        searchState.endDate = endDate;
+        searchState.maxCloudCoverage = maxCloudCoverage;
+        searchState.currentPage = 1; // Reset to page 1 for a new search
 
-    if (elementExists(cloudCoverageSlider)) {
-        maxCloudCoverage = parseInt(cloudCoverageSlider.value);
-    }
-
-    // Get results per page if the element exists
-    if (elementExists(resultsPerPageSelect)) {
-        searchState.resultsPerPage = parseInt(resultsPerPageSelect.value);
-    }
-
-    // Update search state
-    searchState.geometry = geometry;
-    searchState.startDate = startDate;
-    searchState.endDate = endDate;
-    searchState.maxCloudCoverage = maxCloudCoverage;
-    searchState.currentPage = 1; // Reset to page 1 for a new search
-
-    // Perform the search
-    performSearch(1);
-});
+        // Perform the search
+        performSearch(1);
+    });
+}
 
 // Function to update the results button
 function updateResultsButton(count, totalCount = null) {
+    if (!elementExists(resultsButton) || !elementExists(resultsCount)) {
+        return;
+    }
+
     if (count > 0) {
         // Display the count differently based on whether we have pagination
         if (totalCount && totalCount > count) {
@@ -786,94 +797,6 @@ function exportToCSV(results) {
 
     // Clean up
     document.body.removeChild(link);
-}
-
-// Function to populate the results table
-function populateResultsTable(images) {
-    // Clear previous results
-    resultsTableBody.innerHTML = '';
-
-    // Check if we have any images
-    if (!images || images.length === 0) {
-        return;
-    }
-
-    // Add each image to the table
-    images.forEach((image, index) => {
-        // Format date
-        let dateDisplay = 'Unknown date';
-        try {
-            const date = new Date(image.date);
-            dateDisplay = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-        } catch (e) {
-            console.error('Error formatting date:', e);
-        }
-
-        // Format water level data if available
-        let waterLevelDisplay = '<span class="text-muted">Not available</span>';
-        if (image.waterLevel && image.waterLevel.value !== null) {
-            waterLevelDisplay = `
-                <span class="badge bg-info">
-                    ${parseFloat(image.waterLevel.value).toFixed(1)} cm
-                </span>
-                <small class="d-block text-muted">
-                    Station: ${image.waterLevel.stationName || image.waterLevel.stationId}
-                </small>
-            `;
-        } else if (image.waterLevel && image.waterLevel.stationId) {
-            waterLevelDisplay = `
-                <span class="text-muted">No data</span>
-                <small class="d-block text-muted">
-                    Station: ${image.waterLevel.stationName || image.waterLevel.stationId}
-                </small>
-            `;
-        }
-
-        // Create table row
-        const row = document.createElement('tr');
-
-        // Create cells
-        row.innerHTML = `
-            <td>
-                ${image.preview_url
-                    ? `<img src="${image.preview_url}" class="preview-thumbnail"
-                         alt="Preview" onclick="showPreview('${image.preview_url}', '${image.id}')">`
-                    : '<div class="text-center text-muted"><i class="bi bi-image"></i> No preview</div>'
-                }
-            </td>
-            <td title="${image.id}">${truncateText(image.id, 20)}</td>
-            <td>${dateDisplay}</td>
-            <td>${image.cloudCoverage}%</td>
-            <td>${waterLevelDisplay}</td>
-            <td>
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-primary view-details-btn" data-image-id="${image.id}">
-                        <i class="bi bi-info-circle"></i> Details
-                    </button>
-                    <button class="btn btn-sm btn-outline-success download-btn" data-image-id="${image.id}">
-                        <i class="bi bi-download"></i> Download
-                    </button>
-                </div>
-            </td>
-        `;
-
-        resultsTableBody.appendChild(row);
-    });
-
-    // Add event listeners to the buttons
-    document.querySelectorAll('.download-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const imageId = this.getAttribute('data-image-id');
-            showDownloadOptions(imageId);
-        });
-    });
-
-    document.querySelectorAll('.view-details-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const imageId = this.getAttribute('data-image-id');
-            viewImageDetails(imageId);
-        });
-    });
 }
 
 // Helper function to truncate text with ellipsis
@@ -1292,4 +1215,96 @@ function visualizeGeometry(geometry) {
 
     // Zoom to the geometry bounds
     map.fitBounds(geoJsonLayer.getBounds());
+}
+
+// Function to populate the results table
+function populateResultsTable(images) {
+    if (!elementExists(resultsTableBody)) {
+        return;
+    }
+
+    // Clear previous results
+    resultsTableBody.innerHTML = '';
+
+    // Check if we have any images
+    if (!images || images.length === 0) {
+        return;
+    }
+
+    // Add each image to the table
+    images.forEach((image, index) => {
+        // Format date
+        let dateDisplay = 'Unknown date';
+        try {
+            const date = new Date(image.date);
+            dateDisplay = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        } catch (e) {
+            console.error('Error formatting date:', e);
+        }
+
+        // Format water level data if available
+        let waterLevelDisplay = '<span class="text-muted">Not available</span>';
+        if (image.waterLevel && image.waterLevel.value !== null) {
+            waterLevelDisplay = `
+                <span class="badge bg-info">
+                    ${parseFloat(image.waterLevel.value).toFixed(1)} cm
+                </span>
+                <small class="d-block text-muted">
+                    Station: ${image.waterLevel.stationName || image.waterLevel.stationId}
+                </small>
+            `;
+        } else if (image.waterLevel && image.waterLevel.stationId) {
+            waterLevelDisplay = `
+                <span class="text-muted">No data</span>
+                <small class="d-block text-muted">
+                    Station: ${image.waterLevel.stationName || image.waterLevel.stationId}
+                </small>
+            `;
+        }
+
+        // Create table row
+        const row = document.createElement('tr');
+
+        // Create cells
+        row.innerHTML = `
+            <td>
+                ${image.preview_url
+                    ? `<img src="${image.preview_url}" class="preview-thumbnail"
+                         alt="Preview" onclick="showPreview('${image.preview_url}', '${image.id}')">`
+                    : '<div class="text-center text-muted"><i class="bi bi-image"></i> No preview</div>'
+                }
+            </td>
+            <td title="${image.id}">${truncateText(image.id, 20)}</td>
+            <td>${dateDisplay}</td>
+            <td>${image.cloudCoverage}%</td>
+            <td>${waterLevelDisplay}</td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary view-details-btn" data-image-id="${image.id}">
+                        <i class="bi bi-info-circle"></i> Details
+                    </button>
+                    <button class="btn btn-sm btn-outline-success download-btn" data-image-id="${image.id}">
+                        <i class="bi bi-download"></i> Download
+                    </button>
+                </div>
+            </td>
+        `;
+
+        resultsTableBody.appendChild(row);
+    });
+
+    // Add event listeners to the buttons
+    document.querySelectorAll('.download-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const imageId = this.getAttribute('data-image-id');
+            showDownloadOptions(imageId);
+        });
+    });
+
+    document.querySelectorAll('.view-details-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const imageId = this.getAttribute('data-image-id');
+            viewImageDetails(imageId);
+        });
+    });
 }
