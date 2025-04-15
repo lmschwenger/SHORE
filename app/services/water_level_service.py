@@ -215,7 +215,8 @@ class WaterLevelService:
             params = {
                 "status": "Active",
                 "limit": 300,  # Get all stations
-                "api-key": self.api_key
+                "api-key": self.api_key,
+                "type": "Tide-gauge-primary"
             }
 
             self.logger.info("Fetching all water level stations")
@@ -273,7 +274,7 @@ class WaterLevelService:
         Returns:
         - Dictionary with all station water level data at the specified time
         """
-        stations = self.get_all_stations()
+        stations = self.get_all_stations(datetime=timestamp)
         station_levels = {}
 
         for station in stations:
