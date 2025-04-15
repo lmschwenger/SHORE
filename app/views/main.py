@@ -173,9 +173,17 @@ def water_level():
                            app_description=current_app.config['APP_DESCRIPTION'])
 
 
-@main_bp.route('/')
-def index():
+@main_bp.route('/app')
+def app_index():
     """Render the main application page"""
     return render_template('index.html',
+                           app_name=current_app.config['APP_NAME'],
+                           app_description=current_app.config['APP_DESCRIPTION'])
+
+
+@main_bp.route('/')
+def index():
+    """Render the landing page"""
+    return render_template('landing.html',
                            app_name=current_app.config['APP_NAME'],
                            app_description=current_app.config['APP_DESCRIPTION'])
