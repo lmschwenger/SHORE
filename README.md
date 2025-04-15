@@ -8,6 +8,8 @@
 
 SHORE (Sentinel Hydrological Observation & Resource Explorer) is a web application for visualizing and analyzing Sentinel satellite imagery with a focus on hydrological observations. It provides an intuitive interface for searching, viewing, and downloading Sentinel-2 satellite imagery, with integrated water level data from DMI (Danish Meteorological Institute).
 
+## Live Demo
+The application is deployed and accessible at: https://satshore-7a13ebe87a52.herokuapp.com/
 ## Features
 
 - **Interactive Map Interface**: Draw areas of interest directly on the map
